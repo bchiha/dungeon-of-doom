@@ -13,9 +13,11 @@ module DungeonOfDoom
   CHAR_MONST = "STD"
 
   # Define internal colour constants
-  C_WHITE_ON_RED = 1
-  C_RED_ON_YELLOW = 2
+  C_WHITE_ON_RED    = 1
+  C_RED_ON_YELLOW   = 2
   C_BLACK_ON_YELLOW = 3
   C_YELLOW_ON_WHITE = 4
+  C_BLACK_ON_WHITE  = 5
+  C_WHITE_ON_BLACK = 6
 
 end

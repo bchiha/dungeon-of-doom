@@ -87,6 +87,8 @@ module DungeonOfDoom
       init_pair(DungeonOfDoom::C_RED_ON_YELLOW,COLOR_RED,COLOR_YELLOW)
       init_pair(DungeonOfDoom::C_BLACK_ON_YELLOW,COLOR_BLACK,COLOR_YELLOW)
       init_pair(DungeonOfDoom::C_YELLOW_ON_WHITE,COLOR_YELLOW,COLOR_WHITE)
+      init_pair(DungeonOfDoom::C_BLACK_ON_WHITE,COLOR_BLACK,COLOR_WHITE)
+      init_pair(DungeonOfDoom::C_WHITE_ON_BLACK,COLOR_WHITE,COLOR_BLACK)
     end
   end
 end
