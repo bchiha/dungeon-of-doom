@@ -3,12 +3,6 @@ module DungeonOfDoom
   class ScreenHandler
     include Curses
 
-    # Define internal colour Constants
-    C_YELLOW_ON_RED = 1
-    C_RED_ON_YELLOW = 2
-    C_BLACK_ON_YELLOW = 3
-    C_YELLOW_ON_WHITE = 4
-
     # Intialize the screen, setting base window size with width and height
     # Use entire screen if not set
     def initialize(width = nil, height = nil)
@@ -65,18 +59,22 @@ module DungeonOfDoom
       place_text(fill_character*width, start_x, start_y+height-1)
     end
 
-    def test
-       set_colour(C_RED_ON_YELLOW)
-       place_text(@win.maxy.to_s, 5,2)
-       draw_box(19,5,1,1,C_BLACK_ON_YELLOW,C_YELLOW_ON_RED)
-       draw_box(17,17,1,6,C_YELLOW_ON_WHITE,C_BLACK_ON_YELLOW)
-       flash
-       doupdate
-       get_input
+    # Get keystroke from screen
+    def input
+      key = nil
+      key = @win.getch while key.nil?
+      key
+    end
+
+    # Get input from screen regardless of key pressed.  If no key pressed
+    # then nil is returned.  This is useful to manage keystrokes within
+    # the application
+    def instr
+      @win.getch
     end
 
     # Clean up windows and exit cleanly
-    def end_game
+    def cleanup_screen
       @win.close
       close_screen
     end
@@ -85,16 +83,10 @@ module DungeonOfDoom
 
     # Set the initial colours to use. Use own colour definitions
     def init_colours
-      init_pair(C_YELLOW_ON_RED,COLOR_YELLOW,COLOR_RED)
-      init_pair(C_RED_ON_YELLOW,COLOR_RED,COLOR_YELLOW)
-      init_pair(C_BLACK_ON_YELLOW,COLOR_BLACK,COLOR_YELLOW)
-      init_pair(C_YELLOW_ON_WHITE,COLOR_YELLOW,COLOR_WHITE)
-    end
-
-    def get_input
-      key = nil
-      key = @win.getch while key.nil?
-      key
+      init_pair(DungeonOfDoom::C_WHITE_ON_RED,COLOR_YELLOW,COLOR_RED)
+      init_pair(DungeonOfDoom::C_RED_ON_YELLOW,COLOR_RED,COLOR_YELLOW)
+      init_pair(DungeonOfDoom::C_BLACK_ON_YELLOW,COLOR_BLACK,COLOR_YELLOW)
+      init_pair(DungeonOfDoom::C_YELLOW_ON_WHITE,COLOR_YELLOW,COLOR_WHITE)
     end
   end
 end
