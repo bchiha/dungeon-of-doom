@@ -83,12 +83,13 @@ module DungeonOfDoom
 
     # Set the initial colours to use. Use own colour definitions
     def init_colours
-      init_pair(DungeonOfDoom::C_WHITE_ON_RED,COLOR_YELLOW,COLOR_RED)
+      init_pair(DungeonOfDoom::C_WHITE_ON_RED,COLOR_WHITE,COLOR_RED)
       init_pair(DungeonOfDoom::C_RED_ON_YELLOW,COLOR_RED,COLOR_YELLOW)
       init_pair(DungeonOfDoom::C_BLACK_ON_YELLOW,COLOR_BLACK,COLOR_YELLOW)
       init_pair(DungeonOfDoom::C_YELLOW_ON_WHITE,COLOR_YELLOW,COLOR_WHITE)
       init_pair(DungeonOfDoom::C_BLACK_ON_WHITE,COLOR_BLACK,COLOR_WHITE)
       init_pair(DungeonOfDoom::C_WHITE_ON_BLACK,COLOR_WHITE,COLOR_BLACK)
+      init_pair(DungeonOfDoom::C_YELLOW_ON_RED,COLOR_YELLOW,COLOR_RED)
     end
   end
 end
