@@ -11,7 +11,7 @@ module DungeonOfDoom
   			DungeonOfDoom::C_WHITE_ON_RED)
   		#draw the room box
       @ui.draw_box(17,17,2,6,
-       	DungeonOfDoom::C_YELLOW_ON_WHITE,
+        DungeonOfDoom::C_BLACK_ON_WHITE,
        	DungeonOfDoom::C_BLACK_ON_YELLOW)
       @ui.set_colour(DungeonOfDoom::C_BLACK_ON_YELLOW)
       @ui.place_text("LEVEL GENERATOR",2,2)
@@ -25,8 +25,8 @@ module DungeonOfDoom
   		#store coordinates of where 'WAY IN' is (initially nil)
   		@in_x = nil
   		@in_y = nil
-  		#room save string. Store up to 10 levels
-  		@levels = Array.new(10)
+      #room save string. Store the levels (unlimited but should stick to 3 or 4)
+      @levels = Array.new
 
       #initial starting level (intially zero)
       @current_level = 0
@@ -44,7 +44,7 @@ module DungeonOfDoom
 	     	  case key
 	     	  when '?'
 	     	  	display_help
-          when 's','S'
+          when 'n','N'
             save_level
           when 'l','L'
             move_cursor(:right)
@@ -60,7 +60,7 @@ module DungeonOfDoom
           display_cursor
 	     	end
 	    ensure
-       	    @ui.cleanup_screen
+        @ui.cleanup_screen
       end
     end
 
@@ -71,7 +71,7 @@ module DungeonOfDoom
       #set up the help message
       help_message = ["PRESS ANY KEY","TO MOVE J K H L","1 WALL  2 POTION",
         "3 CHEST   4 IDOL*","5 WAY IN  6 EXIT","7 TRAP","8 SAFE PLACE",
-        "9 MONSTER", "0 TO ERASE","S TO SAVE","Q TO EXIT"]
+        "9 MONSTER", "0 TO ERASE","N FOR NEXT LEVEL","Q TO SAVE & EXIT"]
       @ui.set_colour(DungeonOfDoom::C_WHITE_ON_RED)
     	help_message.each do |msg|
     		@ui.place_text(msg.ljust(18),2,5)
@@ -117,15 +117,54 @@ module DungeonOfDoom
     # randmonly select one of three monster characters.
     def place_character(key)
       index = 0
-      random = Random.new
-      if key == '9'
+      if key == '9'  #monster, create a random monster
+        random = Random.new
         index = random.rand(3)
+      elsif key == '5' #save x,y of door location
+        @in_x = @cur_x
+        @in_y = @cur_y
       end
       @room[@cur_x][@cur_y] = DungeonOfDoom::MAP_TILES[key.to_i][index]
     end
 
+    # The room data, entry door position and level number are serialised into
+    # one line and stored in the level array.  The level data is placed col by
+    # col into one line and the entry position and level are joined to the end
+    # of this line.
+    #
+    # Entry position and level data could be more than 1 character
+    # so convert to a string and right justify with '0'.  Two spaces for entry
+    # and three for level.
+    #
+    # If no entry door has been set, then this method returns without saving.
+    # A message is printed with the outcome.  If the save is successful, the
+    # room and entry door position are reset and the level number is updated.
     def save_level
-
+      message = "LEVEL SAVED!"
+      if !@in_x.nil?
+        #save the level
+        level_data = ""
+        @room.each{|col| level_data << col.join} #serialize the room
+        level_data << @in_x.to_s.rjust(2,"0") << @in_y.to_s.rjust(2,"0") << @current_level.to_s.rjust(2,"0")
+        @levels << level_data
+        #reset room, entry and increment level number
+        @room = Array.new(15) { Array.new(15, DungeonOfDoom::CHAR_FLOOR)}
+        @cur_x, @cur_y = 0, 0
+        @in_x, @in_y = nil, nil
+        @ui.set_colour(DungeonOfDoom::C_BLACK_ON_YELLOW)
+        update_level
+        #redraw blank room
+        @ui.set_colour(DungeonOfDoom::C_BLACK_ON_WHITE)
+        @room.each_with_index do |col,x|
+          col.each_with_index do |row,y|
+            @ui.place_text(@room[x][y],x+3,y+7)
+          end
+        end
+      else
+        message = "ENTRY DOOR NEEDED!"
+      end
+      @ui.set_colour(DungeonOfDoom::C_WHITE_ON_RED)
+      @ui.place_text(message.ljust(18),2,5)
     end
 
     # Update the current level counter and display the new level number
