@@ -2,48 +2,48 @@ module DungeonOfDoom
 
   class DungeonGenerator
 
-  	def initialize
-  		#set up screen for the generator
-  		@ui = DungeonOfDoom::ScreenHandler.new(22,24)
-  		#draw the message/title box
-  		@ui.draw_box(20,5,1,1,
-  			DungeonOfDoom::C_BLACK_ON_YELLOW,
-  			DungeonOfDoom::C_WHITE_ON_RED)
-  		#draw the room box
+    def initialize
+      #set up screen for the generator
+      @ui = DungeonOfDoom::ScreenHandler.new(22,24)
+      #draw the message/title box
+      @ui.draw_box(20,5,1,1,
+                   DungeonOfDoom::C_BLACK_ON_YELLOW,
+                   DungeonOfDoom::C_WHITE_ON_RED)
+      #draw the room box
       @ui.draw_box(17,17,2,6,
-        DungeonOfDoom::C_BLACK_ON_WHITE,
-       	DungeonOfDoom::C_BLACK_ON_YELLOW)
+                   DungeonOfDoom::C_BLACK_ON_WHITE,
+                   DungeonOfDoom::C_BLACK_ON_YELLOW)
       @ui.set_colour(DungeonOfDoom::C_BLACK_ON_YELLOW)
       @ui.place_text("LEVEL GENERATOR",2,2)
       @ui.place_text("PRESS ? FOR HELP",2,4)
 
-  		#set up 15x15 room with the space character as the default floow
-  		@room = Array.new(15) { Array.new(15, DungeonOfDoom::CHAR_FLOOR)}
-  		#place initial cursor at top left corner of room box
-  		@cur_x = 0
-  		@cur_y = 0
-  		#store coordinates of where 'WAY IN' is (initially nil)
-  		@in_x = nil
-  		@in_y = nil
+      #set up 15x15 room with the space character as the default floow
+      @room = Array.new(15) { Array.new(15, DungeonOfDoom::CHAR_FLOOR)}
+      #place initial cursor at top left corner of room box
+      @cur_x = 0
+      @cur_y = 0
+      #store coordinates of where 'WAY IN' is (initially nil)
+      @in_x = nil
+      @in_y = nil
       #room save string. Store the levels (unlimited but should stick to 3 or 4)
       @levels = Array.new
 
       #initial starting level (intially zero)
       @current_level = 0
       #now update and display current level
-  		update_level
-  	end
+      update_level
+    end
 
     # Main entry point.  Loops until a valid key is pressed,  Then do the action
     def run
-    	begin
-	    	#get input
-	    	key = nil
-	    	while key != 'q' && key != 'Q'
-	     	  key = @ui.instr
-	     	  case key
-	     	  when '?'
-	     	  	display_help
+      begin
+        #get input
+        key = nil
+        while true
+          key = @ui.instr
+          case key
+          when '?'
+            display_help
           when 'n','N'
             save_level
           when 'l','L'
@@ -54,12 +54,16 @@ module DungeonOfDoom
             move_cursor(:up)
           when 'j','J'
             move_cursor(:down)
-	     	  when "0".."9"
+          when "0".."9"
             place_character(key)
+          when 'q','Q'
+            if save_and_quit #return true if sucessful then exit loop
+              break
+            end
           end
           display_cursor
-	     	end
-	    ensure
+        end
+      ensure
         @ui.cleanup_screen
       end
     end
@@ -70,14 +74,14 @@ module DungeonOfDoom
     def display_help
       #set up the help message
       help_message = ["PRESS ANY KEY","TO MOVE J K H L","1 WALL  2 POTION",
-        "3 CHEST   4 IDOL*","5 WAY IN  6 EXIT","7 TRAP","8 SAFE PLACE",
-        "9 MONSTER", "0 TO ERASE","N FOR NEXT LEVEL","Q TO SAVE & EXIT"]
+                      "3 CHEST   4 IDOL*","5 WAY IN  6 EXIT","7 TRAP","8 SAFE PLACE",
+                      "9 MONSTER", "0 TO ERASE","N FOR NEXT LEVEL","Q TO SAVE & EXIT"]
       @ui.set_colour(DungeonOfDoom::C_WHITE_ON_RED)
-    	help_message.each do |msg|
-    		@ui.place_text(msg.ljust(18),2,5)
-    		@ui.input
-    	end
-    	@ui.place_text(" "*18,2,5) #18 spaces
+      help_message.each do |msg|
+        @ui.place_text(msg.ljust(18),2,5)
+        @ui.input
+      end
+      @ui.place_text(" "*18,2,5) #18 spaces
     end
 
     # Display the cursor at the current position
@@ -167,10 +171,34 @@ module DungeonOfDoom
       @ui.place_text(message.ljust(18),2,5)
     end
 
+    # Saves the levels to a level file and return sucess!
+    # Ask the user for level file name and saves @levels to that file.
+    #
+    # If current_level doesn't have an idol or entry door then
+    # don't quit and return fail.
+    def save_and_quit
+      message = ""
+      if @in_x.nil?
+        message = "ENTRY DOOR NEEDED!"
+      elsif @room.detect {|col| col.join.include?(DungeonOfDoom::CHAR_IDOL)}.nil?
+        message = "IDOL NEEDED"
+      else
+      end
+      if message.empty?
+        save_level
+        #write to file TODO
+        true
+      else
+        @ui.set_colour(DungeonOfDoom::C_WHITE_ON_RED)
+        @ui.place_text(message.ljust(18),2,5)
+        false
+      end
+    end
+
     # Update the current level counter and display the new level number
     def update_level
-    	@current_level += 1
-        @ui.place_text("THIS IS LEVEL: #{@current_level}".ljust(18) ,2,3)
+      @current_level += 1
+      @ui.place_text("THIS IS LEVEL: #{@current_level}".ljust(18) ,2,3)
     end
   end
 end

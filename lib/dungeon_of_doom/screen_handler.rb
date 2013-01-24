@@ -6,30 +6,30 @@ module DungeonOfDoom
     # Intialize the screen, setting base window size with width and height
     # Use entire screen if not set
     def initialize(width = nil, height = nil)
-       #standard curses setup
-       init_screen
-       start_color
-       init_colours
-       clear
-       cbreak
-       noecho
-       curs_set(0)
+      #standard curses setup
+      init_screen
+      start_color
+      init_colours
+      clear
+      cbreak
+      noecho
+      curs_set(0)
 
-       #determine the screen size to center the main window horizontally
-       screen_width, screen_height = [stdscr.maxx, stdscr.maxy]
-       win_width, win_height = [width || screen_width, height || screen_height]
-       pos_x = (screen_width - win_width) / 2
-       @win = Window.new(win_height, win_width, 0, pos_x)
+      #determine the screen size to center the main window horizontally
+      screen_width, screen_height = [stdscr.maxx, stdscr.maxy]
+      win_width, win_height = [width || screen_width, height || screen_height]
+      pos_x = (screen_width - win_width) / 2
+      @win = Window.new(win_height, win_width, 0, pos_x)
 
-       #set up game window
-       @win.keypad(true)
-       @win.box(0,0)
-       @win.timeout=0
+      #set up game window
+      @win.keypad(true)
+      @win.box(0,0)
+      @win.timeout=0
     end
 
     # Given a colour constant (see above), change the colour
     def set_colour(colour_number)
-       @win.attron(color_pair(colour_number))
+      @win.attron(color_pair(colour_number))
     end
 
     # Draw text as position x,y
