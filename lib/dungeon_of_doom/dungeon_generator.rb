@@ -177,16 +177,23 @@ module DungeonOfDoom
     # If current_level doesn't have an idol or entry door then
     # don't quit and return fail.
     def save_and_quit
-      message = ""
-      if @in_x.nil?
-        message = "ENTRY DOOR NEEDED!"
+      message = if @in_x.nil?
+        "ENTRY DOOR NEEDED!"
       elsif @room.detect {|col| col.join.include?(DungeonOfDoom::CHAR_IDOL)}.nil?
-        message = "IDOL NEEDED"
+        "IDOL NEEDED"
       else
+        ""
       end
       if message.empty?
         save_level
-        #write to file TODO
+        #get file name
+        @ui.set_colour(DungeonOfDoom::C_WHITE_ON_RED)
+        @ui.place_text("MAP NAME:".ljust(18),2,5)
+        file_name = @ui.get_string(11,5)
+        #create file
+        File.open(file_name, "w") do |file|
+          @levels.each {|level| file.puts level}
+        end
         true
       else
         @ui.set_colour(DungeonOfDoom::C_WHITE_ON_RED)

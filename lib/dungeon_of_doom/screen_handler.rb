@@ -73,6 +73,27 @@ module DungeonOfDoom
       @win.getch
     end
 
+    # Get input from the screen until return is pressed.  Then return the input
+    # keyed.  This turns echo and the cursor on to give feed back on what is
+    # typed.  Starting x,y location of the string need to be set
+    def get_string(x,y)
+      #show the cursor in input
+      echo
+      curs_set(1)
+      key = nil
+      input_str = ""
+      @win.setpos(y,x)
+      while key != "\n".ord  #converts CR to 10, the Ascii number for line feed, new line
+        key = @win.getch
+        input_str += key.to_s if key != "\n".ord
+      end
+      #hide the cursor and input
+      noecho
+      curs_set(0)
+      #return the string
+      input_str
+    end
+
     # Clean up windows and exit cleanly
     def cleanup_screen
       @win.close
