@@ -57,9 +57,9 @@ module DungeonOfDoom
           when "0".."9"
             place_character(key)
           when 'q','Q'
-            if save_and_quit #return true if sucessful then exit loop
-              break
-            end
+            break if save_and_quit #return true if sucessful then exit loop
+          else
+            #ignore key pressed
           end
           display_cursor
         end
@@ -112,6 +112,8 @@ module DungeonOfDoom
         @cur_y -=1 if @cur_y > 0
       when :down
         @cur_y +=1 if @cur_y < 14
+      else
+        #unknown direction
       end
     end
 
@@ -145,27 +147,27 @@ module DungeonOfDoom
     # room and entry door position are reset and the level number is updated.
     def save_level
       message = "LEVEL SAVED!"
-      if !@in_x.nil?
+      if @in_x.nil?
+        message = "ENTRY DOOR NEEDED!"
+      else
         #save the level
         level_data = ""
-        @room.each{|col| level_data << col.join} #serialize the room
-        level_data << @in_x.to_s.rjust(2,"0") << @in_y.to_s.rjust(2,"0") << @current_level.to_s.rjust(2,"0")
+        @room.each { |col| level_data << col.join } #serialize the room
+        level_data << @in_x.to_s.rjust(2, "0") << @in_y.to_s.rjust(2, "0") << @current_level.to_s.rjust(2, "0")
         @levels << level_data
-        #reset room, entry and increment level number
-        @room = Array.new(15) { Array.new(15, DungeonOfDoom::CHAR_FLOOR)}
+                                                    #reset room, entry and increment level number
+        @room = Array.new(15) { Array.new(15, DungeonOfDoom::CHAR_FLOOR) }
         @cur_x, @cur_y = 0, 0
         @in_x, @in_y = nil, nil
         @ui.set_colour(DungeonOfDoom::C_BLACK_ON_YELLOW)
         update_level
-        #redraw blank room
+                                                    #redraw blank room
         @ui.set_colour(DungeonOfDoom::C_BLACK_ON_WHITE)
-        @room.each_with_index do |col,x|
-          col.each_with_index do |row,y|
-            @ui.place_text(@room[x][y],x+3,y+7)
+        @room.each_with_index do |col, x|
+          col.each_with_index do |_, y|
+            @ui.place_text(@room[x][y], x+3, y+7)
           end
         end
-      else
-        message = "ENTRY DOOR NEEDED!"
       end
       @ui.set_colour(DungeonOfDoom::C_WHITE_ON_RED)
       @ui.place_text(message.ljust(18),2,5)
@@ -205,7 +207,7 @@ module DungeonOfDoom
     # Update the current level counter and display the new level number
     def update_level
       @current_level += 1
-      @ui.place_text("THIS IS LEVEL: #{@current_level}".ljust(18) ,2,3)
+      @ui.place_text("THIS IS LEVEL: #@current_level".ljust(18) ,2,3)
     end
   end
 end
