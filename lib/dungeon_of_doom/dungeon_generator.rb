@@ -37,6 +37,7 @@ module DungeonOfDoom
     # Main entry point.  Loops until a valid key is pressed,  Then do the action
     def run
       begin
+        display_cursor #show initial cursor
         #get input
         key = nil
         while true
@@ -61,7 +62,6 @@ module DungeonOfDoom
           else
             #ignore key pressed
           end
-          display_cursor
         end
       ensure
         @ui.cleanup_screen
@@ -84,17 +84,6 @@ module DungeonOfDoom
       @ui.place_text(" "*18,2,5) #18 spaces
     end
 
-    # Display the cursor at the current position
-    # Note, if current position is a space then, fool the square to look
-    # like a cursor. @cur_x,@cur_y are room values, so need to convert
-    # them to screen values by adding the initial starting position (3,7)
-    # Colour can be overriden by passing a a colour
-    def display_cursor(force_colour=nil)
-      colour = force_colour || DungeonOfDoom::C_YELLOW_ON_RED
-      @ui.set_colour(colour)
-      @ui.place_text(@room[@cur_x][@cur_y], @cur_x+3, @cur_y+7)
-    end
-
     # Cursor moving is in two steps, unset cursor at current position and
     # set the cursor at the new position.  Move the cursor either left,
     # right, up or down, and if cursor hits a boundry then don't change value.
@@ -115,6 +104,20 @@ module DungeonOfDoom
       else
         #unknown direction
       end
+
+      #display the cursor at the new location
+      display_cursor
+    end
+
+    # Display the cursor at the current position
+    # Note, if current position is a space then, fool the square to look
+    # like a cursor. @cur_x,@cur_y are room values, so need to convert
+    # them to screen values by adding the initial starting position (3,7)
+    # Colour can be overriden by passing a a colour
+    def display_cursor(force_colour=nil)
+      colour = force_colour || DungeonOfDoom::C_YELLOW_ON_RED
+      @ui.set_colour(colour)
+      @ui.place_text(@room[@cur_x][@cur_y], @cur_x+3, @cur_y+7)
     end
 
     # Given the number keyed (0 to 9), place the map character in the room and
@@ -131,6 +134,9 @@ module DungeonOfDoom
         @in_y = @cur_y
       end
       @room[@cur_x][@cur_y] = DungeonOfDoom::MAP_TILES[key.to_i][index]
+
+      #display the cursor to show new tile
+      display_cursor
     end
 
     # The room data, entry door position and level number are serialised into
@@ -155,13 +161,13 @@ module DungeonOfDoom
         @room.each { |col| level_data << col.join } #serialize the room
         level_data << @in_x.to_s.rjust(2, "0") << @in_y.to_s.rjust(2, "0") << @current_level.to_s.rjust(2, "0")
         @levels << level_data
-                                                    #reset room, entry and increment level number
+        #reset room, entry and increment level number
         @room = Array.new(15) { Array.new(15, DungeonOfDoom::CHAR_FLOOR) }
         @cur_x, @cur_y = 0, 0
         @in_x, @in_y = nil, nil
         @ui.set_colour(DungeonOfDoom::C_BLACK_ON_YELLOW)
         update_level
-                                                    #redraw blank room
+        #redraw blank room
         @ui.set_colour(DungeonOfDoom::C_BLACK_ON_WHITE)
         @room.each_with_index do |col, x|
           col.each_with_index do |_, y|
