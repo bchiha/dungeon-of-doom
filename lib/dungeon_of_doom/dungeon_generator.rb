@@ -13,8 +13,7 @@ module DungeonOfDoom
       @ui.draw_box(17,17,2,6,
                    DungeonOfDoom::C_BLACK_ON_WHITE,
                    DungeonOfDoom::C_BLACK_ON_YELLOW)
-      @ui.set_colour(DungeonOfDoom::C_BLACK_ON_YELLOW)
-      @ui.place_text("LEVEL GENERATOR",2,2)
+      @ui.place_text("LEVEL GENERATOR",2,2,DungeonOfDoom::C_BLACK_ON_YELLOW)
       @ui.place_text("PRESS ? FOR HELP",2,4)
 
       #set up 15x15 room with the space character as the default floow
@@ -76,12 +75,11 @@ module DungeonOfDoom
       help_message = ["PRESS ANY KEY","TO MOVE J K H L","1 WALL  2 POTION",
                       "3 CHEST   4 IDOL*","5 WAY IN  6 EXIT","7 TRAP","8 SAFE PLACE",
                       "9 MONSTER", "0 TO ERASE","N FOR NEXT LEVEL","Q TO SAVE & EXIT"]
-      @ui.set_colour(DungeonOfDoom::C_WHITE_ON_RED)
       help_message.each do |msg|
-        @ui.place_text(msg.ljust(18),2,5)
+        @ui.place_text(msg.ljust(18),2,5,DungeonOfDoom::C_WHITE_ON_RED)
         @ui.input
       end
-      @ui.place_text(" "*18,2,5) #18 spaces
+      @ui.place_text(" "*18,2,5,DungeonOfDoom::C_WHITE_ON_RED) #18 spaces
     end
 
     # Cursor moving is in two steps, unset cursor at current position and
@@ -115,9 +113,7 @@ module DungeonOfDoom
     # them to screen values by adding the initial starting position (3,7)
     # Colour can be overriden by passing a a colour
     def display_cursor(force_colour=nil)
-      colour = force_colour || DungeonOfDoom::C_YELLOW_ON_RED
-      @ui.set_colour(colour)
-      @ui.place_text(@room[@cur_x][@cur_y], @cur_x+3, @cur_y+7)
+      @ui.place_text(@room[@cur_x][@cur_y], @cur_x+3, @cur_y+7, force_colour || DungeonOfDoom::C_YELLOW_ON_RED)
     end
 
     # Given the number keyed (0 to 9), place the map character in the room and
@@ -165,18 +161,16 @@ module DungeonOfDoom
         @room = Array.new(15) { Array.new(15, DungeonOfDoom::CHAR_FLOOR) }
         @cur_x, @cur_y = 0, 0
         @in_x, @in_y = nil, nil
-        @ui.set_colour(DungeonOfDoom::C_BLACK_ON_YELLOW)
         update_level
         #redraw blank room
-        @ui.set_colour(DungeonOfDoom::C_BLACK_ON_WHITE)
         @room.each_with_index do |col, x|
           col.each_with_index do |_, y|
-            @ui.place_text(@room[x][y], x+3, y+7)
+            @ui.place_text(@room[x][y], x+3, y+7, DungeonOfDoom::C_BLACK_ON_WHITE)
           end
         end
       end
-      @ui.set_colour(DungeonOfDoom::C_WHITE_ON_RED)
-      @ui.place_text(message.ljust(18),2,5)
+      @ui.place_text(message.ljust(18),2,5,DungeonOfDoom::C_WHITE_ON_RED)
+      display_cursor
     end
 
     # Saves the levels to a level file and return sucess!
@@ -195,8 +189,7 @@ module DungeonOfDoom
       if message.empty?
         save_level
         #get file name
-        @ui.set_colour(DungeonOfDoom::C_WHITE_ON_RED)
-        @ui.place_text("MAP NAME:".ljust(18),2,5)
+        @ui.place_text("MAP NAME:".ljust(18),2,5,DungeonOfDoom::C_WHITE_ON_RED)
         file_name = @ui.get_string(11,5)
         #create file
         File.open(file_name, "w") do |file|
@@ -204,8 +197,7 @@ module DungeonOfDoom
         end
         true
       else
-        @ui.set_colour(DungeonOfDoom::C_WHITE_ON_RED)
-        @ui.place_text(message.ljust(18),2,5)
+        @ui.place_text(message.ljust(18),2,5,DungeonOfDoom::C_WHITE_ON_RED)
         false
       end
     end
@@ -213,7 +205,7 @@ module DungeonOfDoom
     # Update the current level counter and display the new level number
     def update_level
       @current_level += 1
-      @ui.place_text("THIS IS LEVEL: #@current_level".ljust(18) ,2,3)
+      @ui.place_text("THIS IS LEVEL: #@current_level".ljust(18) ,2,3,DungeonOfDoom::C_BLACK_ON_YELLOW)
     end
   end
 end

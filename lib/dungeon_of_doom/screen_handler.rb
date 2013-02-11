@@ -33,7 +33,8 @@ module DungeonOfDoom
     end
 
     # Draw text as position x,y
-    def place_text(text, x, y)
+    def place_text(text, x, y, colour=nil)
+      set_colour(colour) if colour
       @win.setpos(y,x)
       @win.addstr(text)
     end
@@ -111,6 +112,8 @@ module DungeonOfDoom
       init_pair(DungeonOfDoom::C_BLACK_ON_WHITE,COLOR_BLACK,COLOR_WHITE)
       init_pair(DungeonOfDoom::C_WHITE_ON_BLACK,COLOR_WHITE,COLOR_BLACK)
       init_pair(DungeonOfDoom::C_YELLOW_ON_RED,COLOR_YELLOW,COLOR_RED)
+      init_pair(DungeonOfDoom::C_YELLOW_ON_BLACK,COLOR_YELLOW,COLOR_BLACK)
+      init_pair(DungeonOfDoom::C_RED_ON_WHITE,COLOR_RED,COLOR_WHITE)
     end
   end
 end

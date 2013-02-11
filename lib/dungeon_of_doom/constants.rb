@@ -25,4 +25,6 @@ module DungeonOfDoom
   C_BLACK_ON_WHITE  = 5
   C_WHITE_ON_BLACK  = 6
   C_YELLOW_ON_RED   = 7
+  C_YELLOW_ON_BLACK = 8
+  C_RED_ON_WHITE    = 9
 end
