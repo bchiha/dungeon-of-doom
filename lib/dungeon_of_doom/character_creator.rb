@@ -9,6 +9,7 @@ module DungeonOfDoom
     POINTS_MARGIN       = 5
     BASE_GOLD           = 120
     GOLD_MARGIN         = 60
+    BARGAIN_REDUCTION   = 3 #Reduce the cost of an item
     CURSOR_SYMBOL       = '>'
     # Pages to go from, order is important
     PAGES = ['CHARACTER CREATION','WEAPONS','ARMOUR','EMPORIUM']
@@ -25,6 +26,7 @@ module DungeonOfDoom
     CHAR_F_MAGE = 4
     CHAR_F_WARR = 8
     CHAR_F_BARB = 16
+    CHARACTER_F = [CHAR_F_WAND,CHAR_F_CLER,CHAR_F_MAGE,CHAR_F_WARR,CHAR_F_BARB]
 
     def initialize
       #set up screen for the generator
@@ -42,6 +44,7 @@ module DungeonOfDoom
       #initialise character stats.  A hash of stat items
       @stats = set_up_stats
       @stat_points = BASE_POINTS+Random.rand(POINTS_MARGIN)+1
+      @character_type = CHAR_F_WAND
 
       #initialise objects
       @objects = set_up_objects
@@ -95,10 +98,8 @@ module DungeonOfDoom
             move_cursor(:up)
           when 'j','J'
             move_cursor(:down)
-          when 'b','B'
-            buy_object if page_no > 0
-          when 'o','O'
-            bid_for_object if page_no > 0
+          when 'b','B','o','O'
+            get_object(key.upcase, page_no) if page_no > 0
           else
             #ignore key pressed
           end
@@ -144,11 +145,48 @@ module DungeonOfDoom
         else
           CHAR_WAND
         end
+        @character_type = CHARACTER_F[CHARACTER.find_index(character)]
         @ui.place_text("CHAR: #{character}".ljust(16),3,3,DungeonOfDoom::C_BLACK_ON_YELLOW)
         #redraw screen
         @ui.place_text(@stat_points.to_s.rjust(2),17,4,DungeonOfDoom::C_BLACK_ON_YELLOW)
         display_page(@stats)
       end
+    end
+
+    # Purchase an item for the cost displayed.  Check if item can be purchased by the character type and
+    # the number of items that can be bought.  Potions and Healing Salves can be bought multiple times
+    def get_object(action, page)
+      #find which object cursor is on
+      object = @objects["page_#{page}".to_sym][@cursor_at-1]
+      #can item be purchased?
+      if object[:flags] & @character_type == 0  #not for character type
+        message = "NOT FOR #{CHARACTER[CHARACTER_F.find_index(@character_type)]}"
+      elsif object[:count] != nil && object[:name] != 'HEALING SALVE' && object[:name] != 'POTION' #already have it
+        message = "YOU HAVE IT SIRE"
+      else #buy or bid for it
+        if action == 'B'
+          #default offer and price
+          asking_price = object[:cost]
+          offer = asking_price
+        else
+          asking_price = object[:cost]-(Random.rand(BARGAIN_REDUCTION)+1)
+          #ask for offer
+          @ui.place_text("YOUR OFFER? ".ljust(16),3,3,DungeonOfDoom::C_BLACK_ON_YELLOW)
+          offer = @ui.get_string(15,3).to_i
+        end
+        if @gold < offer #not enought gold
+          message = "YOU CAN'T AFFORD"
+        elsif offer < asking_price #cheapskate
+          message = "OFFER REJECTED"
+        else #buy it
+          object[:count] = object[:count].nil? ? 1 : object[:count] += 1
+          message = "TIS YOURS"
+          @gold -= offer
+          #update gold count
+          @ui.place_text(@gold.to_s.rjust(3),16,4,DungeonOfDoom::C_BLACK_ON_YELLOW)
+        end
+      end
+      @ui.place_text(message.ljust(16),3,3,DungeonOfDoom::C_BLACK_ON_YELLOW)
     end
 
     # Display the text and value of each item on the screen, also, display the initial heading information
