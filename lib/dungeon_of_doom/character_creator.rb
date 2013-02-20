@@ -45,6 +45,7 @@ module DungeonOfDoom
       @stats = set_up_stats
       @stat_points = BASE_POINTS+Random.rand(POINTS_MARGIN)+1
       @character_type = CHAR_F_WAND
+      @character_name = ""
 
       #initialise objects
       @objects = set_up_objects
@@ -105,6 +106,10 @@ module DungeonOfDoom
           end
         end
       end
+      #ask for character name
+      name_character
+      #save character data into character file and exit
+      save_character
     end
 
     private
@@ -187,6 +192,20 @@ module DungeonOfDoom
         end
       end
       @ui.place_text(message.ljust(16),3,3,DungeonOfDoom::C_BLACK_ON_YELLOW)
+    end
+
+    # This method asked the user to key in the characters name.  The name of the character
+    # must be no more then 6 characters
+    def name_character
+      while @character_name.empty? || @character_name.length > 6
+        @ui.place_text("NAME THY CHARACTER".ljust(18),2,3,DungeonOfDoom::C_BLACK_ON_YELLOW)
+        @ui.place_text("?".ljust(18),2,4,DungeonOfDoom::C_BLACK_ON_YELLOW)
+        @character_name = @ui.get_string(4,4)
+      end
+    end
+
+    def save_character
+
     end
 
     # Display the text and value of each item on the screen, also, display the initial heading information
