@@ -204,8 +204,29 @@ module DungeonOfDoom
       end
     end
 
+    # Output character stats, object name, power and count if bought, gold count and players name.
+    # In this case I decided to not follow what the original program does but to write the data as
+    # a YAML file.  This will include full descriptions and data for the objects and stats.
+    # This will make the data more visable during the game.
     def save_character
-
+      #get file name
+      @ui.place_text("CHARACTER FILE".ljust(18),2,3,DungeonOfDoom::C_BLACK_ON_YELLOW)
+      @ui.place_text("NAME?".ljust(18),2,4,DungeonOfDoom::C_BLACK_ON_YELLOW)
+      file_name = @ui.get_string(8,4)
+      #create file
+      character_data = {}
+      character_data[:stats] = @stats
+      #remove unecessary items for objects array
+      objects = @objects[:page_1] + @objects[:page_2] + @objects[:page_3]
+      [:cost,:flags].each do |item|
+        objects.each do |obj|
+          obj.delete(item)
+        end
+      end
+      character_data[:objects] = objects.inject([]) {|list,item| item[:count].nil? ? list : list << item}
+      character_data[:gold] = @gold
+      character_data[:name] = [@character_name,'THE',CHARACTER[CHARACTER_F.find_index(@character_type)]].join(' ')
+      File.open(file_name, "w") {|file| YAML.dump(character_data, file)}
     end
 
     # Display the text and value of each item on the screen, also, display the initial heading information
