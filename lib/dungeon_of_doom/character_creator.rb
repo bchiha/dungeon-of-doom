@@ -212,7 +212,7 @@ module DungeonOfDoom
       #get file name
       @ui.place_text("CHARACTER FILE".ljust(18),2,3,DungeonOfDoom::C_BLACK_ON_YELLOW)
       @ui.place_text("NAME?".ljust(18),2,4,DungeonOfDoom::C_BLACK_ON_YELLOW)
-      file_name = @ui.get_string(8,4)
+      file_name = @ui.get_string(8,4) + '.yaml'
       #create file
       character_data = {}
       character_data[:stats] = @stats
