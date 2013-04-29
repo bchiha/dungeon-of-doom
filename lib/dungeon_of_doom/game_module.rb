@@ -9,7 +9,7 @@ module DungeonOfDoom
     MSG_AIM     = 'THY AIM IS TRUE'
     MSG_MISS    = 'MISSED'
     MSG_DAMGAGE = 'HIT THEE!!'
-    MSG_KIKK    = 'THE MONSTER IS SLAIN'
+    MSG_KILL    = 'THE MONSTER IS SLAIN'
     MSG_DARK    = 'NO LIGHT'
     MSG_BROKEN  = 'BROKEN THY '
     MSG_SPELL   = 'SPELL EXHAUSED'
@@ -23,6 +23,8 @@ module DungeonOfDoom
     POS_EAST  = 1
     POS_SOUTH = 2
     POS_WEST  = 3
+    POS_TURN  = [POS_NORTH,POS_EAST,POS_SOUTH,POS_WEST]
+    POS_STR   = 'NESWD'
     #Movement X,Y move based on characters facing direction IE: South=2 so move X=>0 and Y=>1 (DOWN)
     DIRECTION =[[0,-1],[1,0],[0,1],[-1,0]]
 
@@ -57,11 +59,18 @@ module DungeonOfDoom
       @objects = nil
       @treasure = 0
       @gold_count = 0
+      @torch_power = 0
+      @potions = 0
+      @attack = 0
       @spells = {}
       @dungeon_file = nil
       @current_level = 1 #always start with at level 1
       @start_x = 0
       @start_y = 0
+      @cur_x = 0
+      @cur_y = 0
+      @hero_direction = POS_EAST #initial direction
+
       #set up 15x15 room with the space character as the default floow
       @room = Array.new(15) { Array.new(15, DungeonOfDoom::CHAR_FLOOR)}
     end
@@ -72,7 +81,9 @@ module DungeonOfDoom
       load_hero_file
       #Load dungeon at top level
       load_dungeon_file(@current_level)
-
+      #display the hero's starting spot
+      clear_message_box
+      update_screen
 @ui.input
     end
 
@@ -131,6 +142,18 @@ module DungeonOfDoom
                 @spells[spell] = 2*power
               end
             end
+            #set torch power
+            torch = @objects.find { |object| object[:name]=='TORCH' }
+            @torch_power = torch[:power] if torch
+            #find initial potion count
+            potion = @objects.find { |object| object[:name]=='POTION' }
+            @potions += potion[:count] if potion
+            #find initial attack power
+            ['2 HAND SWORD','BROADSWORD','SHORTSWORD','AXE','MACE','FLAIL','DAGGER','GAUNTLET'].each do |item|
+              object = @objects.find { |object| object[:name]==item }
+              @attack += object[:power] if object
+            end
+            @attack += @stats[:strength]
           end
         end
       end
@@ -180,6 +203,8 @@ module DungeonOfDoom
           end
           @start_x = (data[225]+data[226]).to_i
           @start_y = (data[227]+data[228]).to_i
+          @cur_x = @start_x
+          @cur_y = @start_y
         else
           @ui.place_text("!LEVEL #{level} NOT FOUND".ljust(20),1,4)
           @ui.place_text('!BAD DUNGEON FILE'.ljust(20),1,5)
@@ -187,33 +212,49 @@ module DungeonOfDoom
       end
     end
 
-# 1770 COLOUR 128:COLOUR 3:PRINT TAB(0,3);"PREPARE DUNGEON FILE"
-# 1780 LET M$=T$(10):GOSUB 370
-# 1790 S=OPENIN "LEVEL"
-# 1795 FOR I=1 TO LV
-# 1800 INPUT#S,S$
-# 1805 NEXT I
-# 1810 CLOSE#S
-# 1820 LET I=1
-# 1830 FOR Y=1 TO 15
-# 1840 FOR X=1 TO 15
-# 1850 LET R(X,Y)=ASC(MID$(S$,I,1))
-# 1860 LET I=I+1
-# 1870 NEXT X
-# 1880 NEXT Y
-# 1890 LET IX=ASC(MID$(S$,I,1))-OS
-# 1900 LET IY=ASC(MID$(S$,I+1,1))-OS
-# 1910 LET LE=ASC(MID$(S$,I+2,1))-OS
-# 1920 IF LE>F(5) THEN GOSUB 1960:GOTO 1760
-# 1930 GOSUB 2790
-# 1940 LET NX=IX:LET NY=IY:LET OX=NX:LET OY=NY:LET DX=255
-# 1950 RETURN
-# 1960 PRINT:PRINT "LEVEL TOO DEEP"
-# 1970 PRINT "REWIND FILE"
-# 1980 PRINT "TO POSITION"
-# 1990 PRINT "FOR LEVEL ";F(5)
-# 2000 RETURN
+    #Update character pos and stats
+    def update_screen
+      #ensure immediate squars around hero can be seen
+      light_room(false) #but don't use torch
+      #draw hero
+      @ui.place_text(DungeonOfDoom::CHAR_PLAYER[@hero_direction], @cur_x+2, @cur_y+6, DungeonOfDoom::C_WHITE_ON_RED)
+      #draw stats
+      @ui.set_colour(DungeonOfDoom::C_WHITE_ON_RED)
+      @ui.place_text(@stats[:strength].to_s.ljust(4),17,7)
+      @ui.place_text(@stats[:vitality].to_s.ljust(4),17,10)
+      @ui.place_text(@stats[:aura].to_s.ljust(4),17,13)
+      @ui.place_text(POS_STR[@hero_direction],17,16)
+      @ui.place_text(@stats[:experience].to_s.ljust(4),17,19)
+      @ui.place_text(@attack.to_s.ljust(3),2,22)
+      @ui.place_text(@spells.values.inject(0){|power,total| total+=power}.to_s.ljust(3),6,22)
+      @ui.place_text(@torch_power.to_s.ljust(3),13,22)
+      @ui.place_text(@potions.to_s.ljust(3),17,22)
+    end
 
+    #Light the room up around the hero.  Set use torch if using torch otherwise just a normal view
+    def light_room(use_torch=true)
+      if use_torch && @torch_power == 0
+        clear_message_box
+        @ui.place_text(MSG_DARK.ljust(20),1,2)
+      else
+        area = use_torch ? 3 : 1
+        (@cur_x-area..@cur_x+area).each do |row|
+          (@cur_y-area..@cur_y+area).each do |col|
+            if (row >= 0 && row <= 14) && (col >= 0 and col <= 14) && !(row == @cur_x && col == @cur_y)
+              draw_map(row,col)
+            end
+          end
+        end
+        @torch_power -= 1 if use_torch
+      end
+    end
+
+    #Draw map at position x,y
+    def draw_map(x,y)
+      @ui.place_text(@room[x][y], x+2, y+6, DungeonOfDoom::C_YELLOW_ON_RED)
+    end
+
+    #Clears the message box
     def clear_message_box
       (2..5).each { |y| @ui.place_text(' '*20,1,y, DungeonOfDoom::C_BLACK_ON_YELLOW) }
     end
