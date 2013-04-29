@@ -314,7 +314,7 @@ module DungeonOfDoom
                      {:name => 'GOLD HELMET', :cost => 14, :power => 2, :flags => CHAR_F_WARR | CHAR_F_BARB},
                      {:name => 'HEADPIECE', :cost => 8, :power => 1, :flags => CHAR_F_WAND | CHAR_F_CLER | CHAR_F_WARR | CHAR_F_BARB},
                      {:name => 'SHIELD', :cost => 6, :power => 3, :flags => CHAR_F_WAND | CHAR_F_CLER | CHAR_F_WARR | CHAR_F_BARB},
-                     {:name => 'TORCH', :cost => 6, :power => 1, :flags => CHAR_F_WAND | CHAR_F_CLER | CHAR_F_MAGE | CHAR_F_WARR | CHAR_F_BARB}]
+                     {:name => 'TORCH', :cost => 6, :power => 10, :flags => CHAR_F_WAND | CHAR_F_CLER | CHAR_F_MAGE | CHAR_F_WARR | CHAR_F_BARB}]
       #emporium
       ob[:page_3] = [{:name => 'NECRONOMICON', :cost => 20, :power => 4, :flags => CHAR_F_WAND | CHAR_F_CLER | CHAR_F_MAGE},
                      {:name => 'SCROLLS', :cost => 15, :power => 3, :flags => CHAR_F_MAGE},
