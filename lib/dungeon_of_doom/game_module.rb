@@ -23,7 +23,7 @@ module DungeonOfDoom
     POS_EAST  = 1
     POS_SOUTH = 2
     POS_WEST  = 3
-    POS_TURN  = [POS_NORTH,POS_EAST,POS_SOUTH,POS_WEST]
+    POS_TURN  = [POS_EAST,POS_SOUTH,POS_WEST,POS_NORTH]
     POS_STR   = 'NESWD'
     #Movement X,Y move based on characters facing direction IE: South=2 so move X=>0 and Y=>1 (DOWN)
     DIRECTION =[[0,-1],[1,0],[0,1],[-1,0]]
@@ -62,6 +62,7 @@ module DungeonOfDoom
       @torch_power = 0
       @potions = 0
       @attack = 0
+      @idol_found = false
       @spells = {}
       @dungeon_file = nil
       @current_level = 1 #always start with at level 1
@@ -83,11 +84,174 @@ module DungeonOfDoom
       load_dungeon_file(@current_level)
       #display the hero's starting spot
       clear_message_box
-      update_screen
-@ui.input
+      #get input either an action or a movement.
+      key = nil
+      while true
+        update_screen
+        key = @ui.instr
+        case key
+          when 'B','b' #turn left
+            @hero_direction = POS_TURN.rotate!(-1)[0]
+          when 'N','n' #turn right
+            @hero_direction = POS_TURN.rotate!(1)[0]
+          when 'M','m' #move ahead
+            move_hero
+          when 'A','a' #attack
+          when 'C','c' #cast
+          when 'G','g' #get
+            get_object
+          when 'P','p' #potion
+            drink_potion
+          when 'R','r' #reveal
+            light_room
+          when 'S','s' #save?
+            #not implemented yet
+          when 'Q','q' #quit
+            if ask_question("DO YOU REALLY WANT","TO QUIT? (Y/N)") == 'Y'
+              break
+            else
+              clear_message_box
+            end
+        end
+      end
     end
 
     private
+
+    #Move the Hero.  First get the next square that the hero will move into.  If its somthing that
+    #can't be stood on, then block the move.  IE a wall or monster.  But a down passage, trap and
+    #safe spot can be walked over.  Traps will hold a player in that spot for some random move.
+    #Walking into walls does damage, but walking will increase health over time.  If Monster is
+    #within range then call the monster sub routine.
+    def move_hero
+      #get next square
+      next_x = @cur_x + DIRECTION[@hero_direction][0]
+      next_y = @cur_y + DIRECTION[@hero_direction][1]
+      next_x = 0 if next_x < 0
+      next_x = 14 if next_x > 14
+      next_y = 0 if next_y < 0
+      next_y = 14 if next_y > 14
+      #look at new square in room
+      next_square = @room[next_x][next_y]
+      draw_map(next_x,next_y)
+      #don't move onto it if next square is an object that can't be walked over
+      if next_square == CHAR_FLOOR || next_square == CHAR_IN || next_square == CHAR_OUT ||
+         next_square == CHAR_TRAP || next_square == CHAR_SAFE
+        #walked into trap, keep on trap unless strong and lucky
+        if @room[@cur_x][@cur_y] == CHAR_TRAP &&
+           @stats[:strength] <= (@orig_stats[:strength] * 0.8) &&
+           @stats[:luck] <= Random.rand(15)
+          next_x = @cur_x
+          next_y = @cur_y
+        end
+        #increase health on any move
+        @stats[:strength] += (@stats[:vitality] / 200.0) if @stats[:strength] < @orig_stats[:strength]
+        #move the character
+        if next_x != @cur_x || next_y != @cur_y
+          draw_map(@cur_x, @cur_y)
+          @cur_x = next_x
+          @cur_y = next_y
+          draw_map(@cur_x, @cur_y)
+        end
+      end
+      #cause damage if walked into wall
+      if next_square == CHAR_WALL
+        @stats[:strength] -= 0.3
+      end
+
+      #monster detected
+
+      #dead
+    end
+
+    #pick up an object, either a potion, treasure or idol.  Potion will add to potion count
+    #treasure will add to final score and if idol then game over. You win!
+    def get_object
+      next_x = @cur_x + DIRECTION[@hero_direction][0]
+      next_y = @cur_y + DIRECTION[@hero_direction][1]
+      return if next_x < 0 || next_x > 14 || next_y < 0 || next_y > 14
+      #look at new square in room
+      next_square = @room[next_x][next_y]
+      if next_square == CHAR_POTION || next_square == CHAR_CHEST || next_square == CHAR_IDOL
+        @room[next_x][next_y] = CHAR_FLOOR
+        draw_map(next_x,next_y)
+        @potions += 1 if next_square == CHAR_POTION
+        @treasure += 1 if next_square == CHAR_CHEST
+        @idol_found = true if next_square == CHAR_IDOL
+      end
+    end
+
+    #drink a potion to revive strength
+    def drink_potion
+      if @potions > 0
+        @stats[:strength] = @orig_stats[:strength]
+        @potions -= 1
+      end
+    end
+
+    #Update character position and stats
+    def update_screen
+      #ensure immediate squars around hero can be seen
+      light_room(false) #but don't use torch
+      #draw hero
+      @ui.place_text(DungeonOfDoom::CHAR_PLAYER[@hero_direction], @cur_x+2, @cur_y+6, DungeonOfDoom::C_WHITE_ON_RED)
+      #draw stats
+      @ui.set_colour(DungeonOfDoom::C_WHITE_ON_RED)
+      @ui.place_text(@stats[:strength].round.to_s.ljust(4),17,7)
+      @ui.place_text(@stats[:vitality].round.to_s.ljust(4),17,10)
+      @ui.place_text(@stats[:aura].round.to_s.ljust(4),17,13)
+      @ui.place_text(POS_STR[@hero_direction],17,16)
+      @ui.place_text(@stats[:experience].to_s.ljust(4),17,19)
+      @ui.place_text(@attack.to_s.ljust(3),2,22)
+      @ui.place_text(@spells.values.inject(0){|power,total| total+=power}.to_s.ljust(3),6,22)
+      @ui.place_text(@torch_power.to_s.ljust(3),13,22)
+      @ui.place_text(@potions.to_s.ljust(3),17,22)
+    end
+
+    #Light the room up around the hero.  Set use torch if using torch otherwise just a normal view
+    def light_room(use_torch=true)
+      if use_torch && @torch_power == 0
+        clear_message_box
+        @ui.place_text(MSG_DARK.ljust(20),1,2)
+      else
+        area = use_torch ? 3 : 1
+        (@cur_x-area..@cur_x+area).each do |row|
+          (@cur_y-area..@cur_y+area).each do |col|
+            if (row >= 0 && row <= 14) && (col >= 0 and col <= 14) && !(row == @cur_x && col == @cur_y)
+              draw_map(row,col)
+            end
+          end
+        end
+        @torch_power -= 1 if use_torch
+      end
+    end
+
+    #Draw map at position x,y
+    def draw_map(x,y)
+      @ui.place_text(@room[x][y], x+2, y+6, DungeonOfDoom::C_YELLOW_ON_RED)
+    end
+
+    #Clears the message box
+    def clear_message_box
+      (2..5).each { |y| @ui.place_text(' '*20,1,y, DungeonOfDoom::C_BLACK_ON_YELLOW) }
+    end
+
+    #Ask Question, Up to three lines, message is mandatory, returns results of answer
+    def ask_question(message, message1=nil, message2=nil)
+      @ui.set_colour(DungeonOfDoom::C_BLACK_ON_YELLOW)
+      @ui.place_text(message.ljust(20),1,2)
+      @ui.place_text(message1.ljust(20),1,3) if message1
+      @ui.place_text(message2.ljust(20),1,4) if message2
+      cursor_spot = if message1.nil? && message2.nil?
+        3
+      elsif message2.nil?
+        4
+      else
+        5
+      end
+      @ui.place_text('>'.ljust(20),1,cursor_spot)
+      @ui.get_string(2,cursor_spot).upcase
+    end
 
     #Ask the user for the hero file.  Hero file must be in yaml format which was generated
     #from the character_creator.rb file.  Once loaded, store vitals for gameplay and display
@@ -210,53 +374,6 @@ module DungeonOfDoom
           @ui.place_text('!BAD DUNGEON FILE'.ljust(20),1,5)
         end
       end
-    end
-
-    #Update character pos and stats
-    def update_screen
-      #ensure immediate squars around hero can be seen
-      light_room(false) #but don't use torch
-      #draw hero
-      @ui.place_text(DungeonOfDoom::CHAR_PLAYER[@hero_direction], @cur_x+2, @cur_y+6, DungeonOfDoom::C_WHITE_ON_RED)
-      #draw stats
-      @ui.set_colour(DungeonOfDoom::C_WHITE_ON_RED)
-      @ui.place_text(@stats[:strength].to_s.ljust(4),17,7)
-      @ui.place_text(@stats[:vitality].to_s.ljust(4),17,10)
-      @ui.place_text(@stats[:aura].to_s.ljust(4),17,13)
-      @ui.place_text(POS_STR[@hero_direction],17,16)
-      @ui.place_text(@stats[:experience].to_s.ljust(4),17,19)
-      @ui.place_text(@attack.to_s.ljust(3),2,22)
-      @ui.place_text(@spells.values.inject(0){|power,total| total+=power}.to_s.ljust(3),6,22)
-      @ui.place_text(@torch_power.to_s.ljust(3),13,22)
-      @ui.place_text(@potions.to_s.ljust(3),17,22)
-    end
-
-    #Light the room up around the hero.  Set use torch if using torch otherwise just a normal view
-    def light_room(use_torch=true)
-      if use_torch && @torch_power == 0
-        clear_message_box
-        @ui.place_text(MSG_DARK.ljust(20),1,2)
-      else
-        area = use_torch ? 3 : 1
-        (@cur_x-area..@cur_x+area).each do |row|
-          (@cur_y-area..@cur_y+area).each do |col|
-            if (row >= 0 && row <= 14) && (col >= 0 and col <= 14) && !(row == @cur_x && col == @cur_y)
-              draw_map(row,col)
-            end
-          end
-        end
-        @torch_power -= 1 if use_torch
-      end
-    end
-
-    #Draw map at position x,y
-    def draw_map(x,y)
-      @ui.place_text(@room[x][y], x+2, y+6, DungeonOfDoom::C_YELLOW_ON_RED)
-    end
-
-    #Clears the message box
-    def clear_message_box
-      (2..5).each { |y| @ui.place_text(' '*20,1,y, DungeonOfDoom::C_BLACK_ON_YELLOW) }
     end
 
   end
