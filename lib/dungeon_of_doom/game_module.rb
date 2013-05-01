@@ -16,7 +16,7 @@ module DungeonOfDoom
     MSG_SPELL   = 'SPELL EXHAUSED'
     MSG_KEY     = 'PRESS ANY KEY'
     MSG_EXP     = 'YOU NEED EXPERIENCE'
-    MSG_EXIT    = 'EXIT FROM THIS LEVEL '
+    MSG_DIED    = 'THOU HAST EXPIRED!'
     MSG_ATTACK  = [MSG_BLOW,MSG_HIT,MSG_AIM]
 
     #Facing direction for lookup into movement array
@@ -107,6 +107,7 @@ module DungeonOfDoom
           when 'A','a' #attack
             hero_attack if @monster_detected
           when 'C','c' #cast
+            #TODO
           when 'G','g' #get
             get_object
           when 'P','p' #potion
@@ -122,8 +123,20 @@ module DungeonOfDoom
               clear_message_box
             end
         end
+        #automated game elements
+
         #monster detected
         monster_attack if @monster_detected
+        #hero died
+        if @stats[:strength] <= 0
+          game_over
+          break
+        end
+        #hero gets idol!
+        if @idol_found
+          win_game
+          break
+        end
       end
     end
 
@@ -339,6 +352,27 @@ module DungeonOfDoom
       end
     end
 
+    #Player has picked up the Idol.  Show score and do a dance!
+    def win_game
+      clear_message_box
+      @ui.place_text("THY QUEST IS OVER!".center(20),1,2)
+      (0..36).each do |i|
+        hero_direction = POS_TURN.rotate!(i <=> 16)[0]
+        @ui.place_text(DungeonOfDoom::CHAR_PLAYER[hero_direction], @cur_x+2, @cur_y+6, DungeonOfDoom::C_WHITE_ON_RED)
+        sleep 0.1
+        @ui.refresh
+      end
+      ask_question("THY SCORE=#{((@treasure*10)+(@gold_count*@stats[:experience])+@stats[:strength]+
+                                  @stats[:vitality]+@stats[:agility]).round}",MSG_KEY)
+    end
+
+    #Game over.  Hero has no strength left
+    def game_over
+      @room[@cur_x][@cur_y] = DungeonOfDoom::CHAR_PLAYER[4]
+      draw_map(@cur_x,@cur_y)
+      ask_question(MSG_DIED,MSG_KEY)
+    end
+
     #Draw map at position x,y.  Also if monster found the activate it
     def draw_map(x,y)
       object = @room[x][y]
@@ -365,15 +399,7 @@ module DungeonOfDoom
       @ui.place_text(message.ljust(20),1,2)
       @ui.place_text(message1.ljust(20),1,3) if message1
       @ui.place_text(message2.ljust(20),1,4) if message2
-      cursor_spot = if message1.nil? && message2.nil?
-        3
-      elsif message2.nil?
-        4
-      else
-        5
-      end
-      @ui.place_text('>'.ljust(20),1,cursor_spot)
-      @ui.get_string(2,cursor_spot).upcase
+      @ui.input.upcase
     end
 
     #Ask the user for the hero file.  Hero file must be in yaml format which was generated

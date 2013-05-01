@@ -39,6 +39,10 @@ module DungeonOfDoom
       @win.addstr(text)
     end
 
+    def refresh
+      @win.refresh
+    end
+
     # Draw box with or without border
     # width and height are the box dimensions and colour is its colour
     # start_x and start_y is the boxes top left corner
