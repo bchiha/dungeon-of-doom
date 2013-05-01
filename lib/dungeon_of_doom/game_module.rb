@@ -8,6 +8,7 @@ module DungeonOfDoom
     MSG_HIT     = 'WELL HIT SIRE'
     MSG_AIM     = 'THY AIM IS TRUE'
     MSG_MISS    = 'MISSED'
+    MSG_MMISS   = 'MONSTER MISSED!'
     MSG_DAMGAGE = 'HIT THEE!!'
     MSG_KILL    = 'THE MONSTER IS SLAIN'
     MSG_DARK    = 'NO LIGHT'
@@ -62,6 +63,13 @@ module DungeonOfDoom
       @torch_power = 0
       @potions = 0
       @attack = 0
+      @defence = 0
+      @monster_detected = false
+      @mon_x = 0
+      @mon_y = 0
+      @mon_type = nil
+      @mon_attack = 0
+      @mon_strength = 0
       @idol_found = false
       @spells = {}
       @dungeon_file = nil
@@ -113,6 +121,8 @@ module DungeonOfDoom
               clear_message_box
             end
         end
+        #monster detected
+        monster_attack if @monster_detected
       end
     end
 
@@ -153,13 +163,15 @@ module DungeonOfDoom
           @cur_y = next_y
           draw_map(@cur_x, @cur_y)
         end
+        #if on exit door then decend to next level if have enough experience
+        if next_square == CHAR_OUT
+          load_dungeon_file(@current_level+1)
+        end
       end
       #cause damage if walked into wall
       if next_square == CHAR_WALL
         @stats[:strength] -= 0.3
       end
-
-      #monster detected
 
       #dead
     end
@@ -226,9 +238,83 @@ module DungeonOfDoom
       end
     end
 
-    #Draw map at position x,y
+    def hero_attack
+
+    end
+
+    #Monster Attack!!.  If a monster is detected then activate the attack routine for the monster.  Thie routine
+    #moves the monster within one space of the hero.  Then if close enough try to attach hero.  If heros luck and
+    #agility are greater then the monsters attack speed the monster misses.  If the monsters hits, it takes
+    #damage off the hero and it might also destroy a weapon or armour.  If the hero is standing on a safe square
+    #then the monster pulls back and doesn't attack.
+    def monster_attack
+      #set up monster distance and next move
+      distance_x = @mon_x - @cur_x
+      distance_y = @mon_y - @cur_y
+      sign_x = distance_x <=> 0
+      sign_y = distance_y <=> 0
+      new_x = @mon_x-(1*sign_x)
+      new_y = @mon_y-(1*sign_y)
+      next_square = @room[new_x][new_y]
+      #move monster closer to hero unless blocked or next to hero
+      if next_square == CHAR_FLOOR && (distance_x.abs > 1 || distance_y.abs > 1)
+        @room[@mon_x][@mon_y] = CHAR_FLOOR
+        draw_map(@mon_x, @mon_y)
+        @mon_x, @mon_y = new_x, new_y
+        @room[@mon_x][@mon_y] = @mon_type
+        draw_map(@mon_x, @mon_y)
+      end
+      #hit hero if close enough and hero not on saftey square
+      if (distance_x.abs <= 1 && distance_y.abs <= 1) && @room[@cur_x][@cur_y] != CHAR_SAFE
+        hit = @mon_attack * 1.5
+        #hit if not dodged
+        skill = @stats[:luck]+@stats[:agility]
+        clear_message_box
+        if Random.rand(skill+(@mon_attack*3)) > skill
+          @ui.place_text(MSG_DAMGAGE.ljust(20),1,2)
+          damage = hit / (2+@defence)
+          @stats[:strength] -= damage
+          @stats[:vitality] -= damage/10
+          #see if hit weapon
+          if Random.rand(7) == @mon_attack  #1 in 7 chance of loosing item
+            item_found = false
+            while not item_found
+              #get a random item, keep trying until found on hero
+              object = ['2 HAND SWORD','BROADSWORD','SHORTSWORD','AXE','MACE','FLAIL','DAGGER','GAUNTLET',
+                        'HEAVY ARMOUR','CHAIN ARMOUR'].rotate(Random.rand(10)+1).first
+              item = @objects.find { |obj| obj[:name]==object }
+              if item
+                if object == 'HEAVY ARMOUR' || object == 'CHAIN ARMOUR'
+                  @defence -= item[:power]
+                else
+                  @attack -= item[:power]
+                end
+                @ui.place_text("#{object}!!".ljust(20),1,3)
+                @objects.delete(item)
+                item_found = true
+              end
+            end
+          end
+        else
+          @ui.place_text(MSG_MMISS.ljust(20),1,2)
+        end
+        sleep 0.5 #slow everything down
+      end
+    end
+
+    #Draw map at position x,y.  Also if monster found the activate it
     def draw_map(x,y)
-      @ui.place_text(@room[x][y], x+2, y+6, DungeonOfDoom::C_YELLOW_ON_RED)
+      object = @room[x][y]
+      @ui.place_text(object, x+2, y+6, DungeonOfDoom::C_YELLOW_ON_RED)
+      #check of object shown in a monster, if so, activate it. only activate one at a time
+      @ui.place_text("MONSTER STRENGTH: #{@mon_strength.round}".ljust(20),1,5,DungeonOfDoom::C_BLACK_ON_YELLOW) if @mon_strength > 0
+      if CHAR_MONST.include?(object) && !@monster_detected
+        @monster_detected = true
+        @mon_x, @mon_y = x,y
+        @mon_type = object
+        @mon_attack = CHAR_MONST.index(object)+1
+        @mon_strength = @mon_attack*6
+      end
     end
 
     #Clears the message box
@@ -318,6 +404,11 @@ module DungeonOfDoom
               @attack += object[:power] if object
             end
             @attack += @stats[:strength]
+            #find initial defence power
+            ['HEAVY ARMOUR','CHAIN ARMOUR','LEATHER SKINS','HEAVY ROBE','GOLD HELMET','HEADPIECE','SHIELD'].each do |item|
+              object = @objects.find { |object| object[:name]==item }
+              @defence += object[:power] if object
+            end
           end
         end
       end
@@ -365,10 +456,12 @@ module DungeonOfDoom
               @room[row][col] = data[(15*row)+col]
             end
           end
+          @ui.draw_box(15,15,2,6,DungeonOfDoom::C_WHITE_ON_BLACK)
           @start_x = (data[225]+data[226]).to_i
           @start_y = (data[227]+data[228]).to_i
           @cur_x = @start_x
           @cur_y = @start_y
+          @current_level = level
         else
           @ui.place_text("!LEVEL #{level} NOT FOUND".ljust(20),1,4)
           @ui.place_text('!BAD DUNGEON FILE'.ljust(20),1,5)
