@@ -105,6 +105,7 @@ module DungeonOfDoom
           when 'M','m' #move ahead
             move_hero
           when 'A','a' #attack
+            hero_attack if @monster_detected
           when 'C','c' #cast
           when 'G','g' #get
             get_object
@@ -190,6 +191,7 @@ module DungeonOfDoom
         @potions += 1 if next_square == CHAR_POTION
         @treasure += 1 if next_square == CHAR_CHEST
         @idol_found = true if next_square == CHAR_IDOL
+        @stats[:experience] += 0.25
       end
     end
 
@@ -213,7 +215,7 @@ module DungeonOfDoom
       @ui.place_text(@stats[:vitality].round.to_s.ljust(4),17,10)
       @ui.place_text(@stats[:aura].round.to_s.ljust(4),17,13)
       @ui.place_text(POS_STR[@hero_direction],17,16)
-      @ui.place_text(@stats[:experience].to_s.ljust(4),17,19)
+      @ui.place_text(@stats[:experience].floor.to_s.ljust(4),17,19)
       @ui.place_text(@attack.to_s.ljust(3),2,22)
       @ui.place_text(@spells.values.inject(0){|power,total| total+=power}.to_s.ljust(3),6,22)
       @ui.place_text(@torch_power.to_s.ljust(3),13,22)
@@ -238,8 +240,43 @@ module DungeonOfDoom
       end
     end
 
+    #Attack the monster.  If here is close enough and skilled enough, hit monster
     def hero_attack
+      #ensure hero is within attacking range
+      distance_x = @mon_x - @cur_x
+      distance_y = @mon_y - @cur_y
+      clear_message_box
+      if (distance_x.abs <= 1 && distance_y.abs <= 1)
+        #does hero hit the monster?
+        skill = @stats[:luck]+@stats[:agility]
+        if skill >= Random.rand(skill + (@mon_attack * 2))
+          damage = (@attack + Random.rand(@stats[:luck])) / 2
+          @mon_strength -= damage
+          @ui.place_text(MSG_ATTACK.sample.ljust(20),1,2)
+          kill_monster if @mon_strength <= 0
+        else
+          @ui.place_text(MSG_MISS.ljust(20),1,2)
+        end
+      else
+        @ui.place_text(MSG_MISS.ljust(20),1,2)
+      end
+    end
 
+    #Kill monster.  Called when monsters strength is less than 1
+    def kill_monster
+      #clear monster
+      @monster_detected = false
+      @mon_type = nil
+      @mon_strength = 0
+      @room[@mon_x][@mon_y] = CHAR_FLOOR
+      draw_map(@mon_x,@mon_y)
+      @mon_x = 0
+      @mon_y = 0
+      #add experience
+      @stats[:experience] += 0.5
+      @mon_attack = 0
+      clear_message_box
+      @ui.place_text(MSG_KILL.ljust(20),1,2)
     end
 
     #Monster Attack!!.  If a monster is detected then activate the attack routine for the monster.  Thie routine
@@ -313,7 +350,7 @@ module DungeonOfDoom
         @mon_x, @mon_y = x,y
         @mon_type = object
         @mon_attack = CHAR_MONST.index(object)+1
-        @mon_strength = @mon_attack*6
+        @mon_strength = @mon_attack*12
       end
     end
 
@@ -462,6 +499,7 @@ module DungeonOfDoom
           @cur_x = @start_x
           @cur_y = @start_y
           @current_level = level
+          @monster_detected = false
         else
           @ui.place_text("!LEVEL #{level} NOT FOUND".ljust(20),1,4)
           @ui.place_text('!BAD DUNGEON FILE'.ljust(20),1,5)
