@@ -15,6 +15,7 @@ module DungeonOfDoom
     MSG_BROKEN  = 'BROKEN THY '
     MSG_SPELL   = 'SPELL EXHAUSED'
     MSG_KEY     = 'PRESS ANY KEY'
+    MSG_NOTHING = 'NOTHING HAPPENS'
     MSG_EXP     = 'YOU NEED EXPERIENCE'
     MSG_DIED    = 'THOU HAST EXPIRED!'
     MSG_ATTACK  = [MSG_BLOW,MSG_HIT,MSG_AIM]
@@ -27,7 +28,9 @@ module DungeonOfDoom
     POS_TURN  = [POS_EAST,POS_SOUTH,POS_WEST,POS_NORTH]
     POS_STR   = 'NESWD'
     #Movement X,Y move based on characters facing direction IE: South=2 so move X=>0 and Y=>1 (DOWN)
-    DIRECTION =[[0,-1],[1,0],[0,1],[-1,0]]
+    DIRECTION = [[0,-1],[1,0],[0,1],[-1,0]]
+    #Spells (order is based on spell number)
+    SPELLS = [:super_zap, :santuary, :teleport, :powersurge, :metamorphosis, :healing]
 
     #Override Level decending based on experience
     LEVEL_EXPERIENCE_CHECK = true
@@ -54,7 +57,11 @@ module DungeonOfDoom
       @ui.place_text('CAN',13,21)
       @ui.place_text('POT',17,21)
 
-      #game variables
+      #hero variables
+      @current_level = 1 #always start with at level 1
+      @cur_x = 0
+      @cur_y = 0
+      @hero_direction = POS_EAST #initial direction
       @stats = {}
       @orig_stats = {}
       @objects = nil
@@ -64,21 +71,17 @@ module DungeonOfDoom
       @potions = 0
       @attack = 0
       @defence = 0
+      @spells = {}
+      #game variables
+      @idol_found = false
+      @dungeon_file = nil
+      #monster variables
       @monster_detected = false
       @mon_x = 0
       @mon_y = 0
       @mon_type = nil
       @mon_attack = 0
       @mon_strength = 0
-      @idol_found = false
-      @spells = {}
-      @dungeon_file = nil
-      @current_level = 1 #always start with at level 1
-      @start_x = 0
-      @start_y = 0
-      @cur_x = 0
-      @cur_y = 0
-      @hero_direction = POS_EAST #initial direction
 
       #set up 15x15 room with the space character as the default floow
       @room = Array.new(15) { Array.new(15, DungeonOfDoom::CHAR_FLOOR)}
@@ -107,7 +110,12 @@ module DungeonOfDoom
           when 'A','a' #attack
             hero_attack if @monster_detected
           when 'C','c' #cast
-            #TODO
+            if @stats[:aura] > 0 && !@spells.empty?
+              cast_spell
+            else
+              @ui.place_text('FIZZZZ....'.ljust(20),1,2,DungeonOfDoom::C_BLACK_ON_YELLOW)
+              @ui.place_text(MSG_NOTHING.ljust(20),1,3,DungeonOfDoom::C_BLACK_ON_YELLOW)
+            end
           when 'G','g' #get
             get_object
           when 'P','p' #potion
@@ -352,6 +360,101 @@ module DungeonOfDoom
       end
     end
 
+    #Cast a spell.  There are 6 different types of spells.  Three [:super_zap, :santuary, :teleport]
+    #if you have Necronomicon and three [:powersurge, :metamorphosis, :healing] if you have Scrolls.
+    #To activate the spell the user must select a number from 1 to 6.  they represent the six spells
+    #and their details can be found in the Book of Lore
+    #
+    #The spells work as follows:
+    #
+    # * :super_zap - if monster has been detected, immediately slay it
+    # * :santuary - create a safe place where the hero is standing, repelling any monster attacks.
+    # * :teleport - teleport to another area on the map.  Only works if location is an empty space
+    # * :powersurge - increase strength and vitality above the hero's initial limits
+    # * :metamorphosis - change what ever is in front of the hero into some other object or monster
+    # * :healing - heals hero back to original strength and vitality levels
+    #
+    #Spells have a limited number of uses, three each for Scrolls and four each for Necronomicon.
+    def cast_spell
+      spell_number = nil
+      book = @objects.find { |object| object[:name]=='NECRONOMICON' }
+      scroll = @objects.find { |object| object[:name]=='SCROLLS' }
+      while !(1..6).include?(spell_number)
+        spell_number = ask_question(book.nil? ? '' : 'FROM NECRONOMICON',
+          scroll.nil? ? '' : 'FROM THE SCROLLS',
+          'CONSULT THE LORE','USE SPELL NUMBER?').to_i
+        #reset if spell choosen but don't know it
+        spell_number = 0 if ((1..3).include?(spell_number) && book.nil?) || ((4..6).include?(spell_number) && scroll.nil?)
+      end
+      clear_message_box
+      #check if spell isn't exhuasted, if so use it
+      if @spells[SPELLS[spell_number-1]] > 0
+        #reduce the spell count
+        @spells[SPELLS[spell_number-1]] -= 1
+        #fire the spell
+        case spell_number
+        when 1 #superzap
+          if @monster_detected
+            kill_monster
+            @ui.place_text("ZAPPP! THE MONSTER".ljust(20),1,3)
+            @ui.place_text("TURNS INTO DUST!".ljust(20),1,4)
+          else
+            @ui.place_text(MSG_NOTHING.ljust(20),1,2)
+          end
+        when 2 #santuary
+          if @room[@cur_x][@cur_y] == CHAR_FLOOR
+            @room[@cur_x][@cur_y] = CHAR_SAFE
+            @ui.place_text('SAFE PLACE CREATED'.ljust(20),1,2)
+          else
+            @ui.place_text('YOUR ATTEMPT TO'.ljust(20),1,2)
+            @ui.place_text('CREATE A SAFE PLACE'.ljust(20),1,3)
+            @ui.place_text('FAILS!'.ljust(20),1,4)
+          end
+        when 3 #teleport
+          new_x = Random.rand(15)
+          new_y = Random.rand(15)
+          if @room[new_x][new_y] == CHAR_FLOOR
+            @cur_x, @cur_y = new_x, new_y
+            @ui.place_text('TELEPORTATION WORKED'.ljust(20),1,2)
+          else
+            @ui.place_text('TELEPORTATION FAILED'.ljust(20),1,2)
+          end
+        when 4 #powersurge
+          @stats[:strength] += @stats[:aura]
+          @stats[:vitality] += @stats[:aura]
+          @stats[:aura] -= 1  #reduce aura
+          @ui.place_text("POWERSURGE APPLIED".ljust(20),1,2)
+        when 5 #metamorphosis
+          #change what ever is facing the hero.
+          @ui.place_text("METAMORPHOSISING!".ljust(20),1,2)
+          next_x = @cur_x + DIRECTION[@hero_direction][0]
+          next_y = @cur_y + DIRECTION[@hero_direction][1]
+          if next_x >= 0 && next_x <= 14 && next_y >= 0 && next_y <= 14
+            (1..30).each do |i|
+              object = [CHAR_WALL,CHAR_POTION,CHAR_CHEST,CHAR_TRAP,CHAR_SAFE,CHAR_MONST].sample
+              object = object[Random.rand(3)] if object == CHAR_MONST
+              @room[next_x][next_y] = object
+              @ui.place_text(object, next_x+2, next_y+6, DungeonOfDoom::C_YELLOW_ON_RED)
+              sleep 0.1
+              @ui.refresh
+            end
+            @monster_detected = false #remove if monster change. but will re set if needed later
+          else
+            @ui.place_text("FACING INTO WALL?".ljust(20),1,2)
+          end
+        when 6 #healing
+          @stats[:strength] = @orig_stats[:strength] if @stats[:strength] < @orig_stats[:strength]
+          @stats[:vitality] = @orig_stats[:vitality] if @stats[:vitality] < @orig_stats[:vitality]
+          @stats[:aura] -= 1  #reduce aura
+          @ui.place_text("FULLY HEALED".ljust(20),1,2)
+        else
+          @ui.place_text('!UNKNOWN SPELL'.ljust(20),1,2)
+        end
+      else
+        @ui.place_text(MSG_SPELL.ljust(20),1,2)
+      end
+    end
+
     #Player has picked up the Idol.  Show score and do a dance!
     def win_game
       clear_message_box
@@ -378,7 +481,7 @@ module DungeonOfDoom
       object = @room[x][y]
       @ui.place_text(object, x+2, y+6, DungeonOfDoom::C_YELLOW_ON_RED)
       #check of object shown in a monster, if so, activate it. only activate one at a time
-      @ui.place_text("MONSTER STRENGTH: #{@mon_strength.round}".ljust(20),1,5,DungeonOfDoom::C_BLACK_ON_YELLOW) if @mon_strength > 0
+      @ui.place_text("MONSTER STRENGTH: #{@mon_strength.round}".ljust(20),1,5,DungeonOfDoom::C_BLACK_ON_YELLOW) if @monster_detected
       if CHAR_MONST.include?(object) && !@monster_detected
         @monster_detected = true
         @mon_x, @mon_y = x,y
@@ -394,12 +497,14 @@ module DungeonOfDoom
     end
 
     #Ask Question, Up to three lines, message is mandatory, returns results of answer
-    def ask_question(message, message1=nil, message2=nil)
+    def ask_question(message, message1=nil, message2=nil, message3=nil)
+      clear_message_box
       @ui.set_colour(DungeonOfDoom::C_BLACK_ON_YELLOW)
       @ui.place_text(message.ljust(20),1,2)
       @ui.place_text(message1.ljust(20),1,3) if message1
       @ui.place_text(message2.ljust(20),1,4) if message2
-      @ui.input.upcase
+      @ui.place_text(message3.ljust(20),1,5) if message3
+      @ui.input.upcase rescue ''
     end
 
     #Ask the user for the hero file.  Hero file must be in yaml format which was generated
@@ -445,14 +550,14 @@ module DungeonOfDoom
             if book
               power = book[:power]
               [:super_zap, :santuary, :teleport].each do |spell|
-                @spells[spell] = 2*power
+                @spells[spell] = power
               end
             end
             scroll = @objects.find { |object| object[:name]=='SCROLLS' }
             if scroll
               power = scroll[:power]
               [:powersurge, :metamorphosis, :healing].each do |spell|
-                @spells[spell] = 2*power
+                @spells[spell] = power
               end
             end
             #set torch power
@@ -520,10 +625,8 @@ module DungeonOfDoom
             end
           end
           @ui.draw_box(15,15,2,6,DungeonOfDoom::C_WHITE_ON_BLACK)
-          @start_x = (data[225]+data[226]).to_i
-          @start_y = (data[227]+data[228]).to_i
-          @cur_x = @start_x
-          @cur_y = @start_y
+          @cur_x = (data[225]+data[226]).to_i
+          @cur_y = (data[227]+data[228]).to_i
           @current_level = level
           @monster_detected = false
         else
