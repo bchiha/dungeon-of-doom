@@ -13,8 +13,8 @@ module DungeonOfDoom
       @ui.draw_box(17,17,2,6,
                    DungeonOfDoom::C_BLACK_ON_WHITE,
                    DungeonOfDoom::C_BLACK_ON_YELLOW)
-      @ui.place_text("LEVEL GENERATOR",2,2,DungeonOfDoom::C_BLACK_ON_YELLOW)
-      @ui.place_text("PRESS ? FOR HELP",2,4)
+      @ui.place_text('LEVEL GENERATOR',2,2,DungeonOfDoom::C_BLACK_ON_YELLOW)
+      @ui.place_text('PRESS ? FOR HELP',2,4)
 
       #set up 15x15 room with the space character as the default floow
       @room = Array.new(15) { Array.new(15, DungeonOfDoom::CHAR_FLOOR)}
@@ -54,7 +54,7 @@ module DungeonOfDoom
             move_cursor(:up)
           when 'j','J'
             move_cursor(:down)
-          when "0".."9"
+          when '0'..'9'
             place_character(key)
           when 'q','Q'
             break if save_and_quit #return true if sucessful then exit loop
@@ -72,14 +72,14 @@ module DungeonOfDoom
     # Display the help messages
     def display_help
       #set up the help message
-      help_message = ["PRESS ANY KEY","TO MOVE J K H L","1 WALL  2 POTION",
-                      "3 CHEST   4 IDOL*","5 WAY IN  6 EXIT","7 TRAP","8 SAFE PLACE",
-                      "9 MONSTER", "0 TO ERASE","N FOR NEXT LEVEL","Q TO SAVE & EXIT"]
+      help_message = ['PRESS ANY KEY','TO MOVE J K H L','1 WALL  2 POTION',
+                      '3 CHEST   4 IDOL*','5 WAY IN  6 EXIT','7 TRAP','8 SAFE PLACE',
+                      '9 MONSTER', '0 TO ERASE','N FOR NEXT LEVEL','Q TO SAVE & EXIT']
       help_message.each do |msg|
         @ui.place_text(msg.ljust(18),2,5,DungeonOfDoom::C_WHITE_ON_RED)
         @ui.input
       end
-      @ui.place_text(" "*18,2,5,DungeonOfDoom::C_WHITE_ON_RED) #18 spaces
+      @ui.place_text(' '*18,2,5,DungeonOfDoom::C_WHITE_ON_RED) #18 spaces
     end
 
     # Cursor moving is in two steps, unset cursor at current position and
@@ -148,14 +148,14 @@ module DungeonOfDoom
     # A message is printed with the outcome.  If the save is successful, the
     # room and entry door position are reset and the level number is updated.
     def save_level
-      message = "LEVEL SAVED!"
+      message = 'LEVEL SAVED!'
       if @in_x.nil?
-        message = "ENTRY DOOR NEEDED!"
+        message = 'ENTRY DOOR NEEDED!'
       else
         #save the level
-        level_data = ""
+        level_data = ''
         @room.each { |col| level_data << col.join } #serialize the room
-        level_data << @in_x.to_s.rjust(2, "0") << @in_y.to_s.rjust(2, "0") << @current_level.to_s.rjust(2, "0")
+        level_data << @in_x.to_s.rjust(2, '0') << @in_y.to_s.rjust(2, '0') << @current_level.to_s.rjust(2, '0')
         @levels << level_data
         #reset room, entry and increment level number
         @room = Array.new(15) { Array.new(15, DungeonOfDoom::CHAR_FLOOR) }
@@ -180,19 +180,19 @@ module DungeonOfDoom
     # don't quit and return fail.
     def save_and_quit
       message = if @in_x.nil?
-        "ENTRY DOOR NEEDED!"
+        'ENTRY DOOR NEEDED!'
       elsif @room.detect {|col| col.join.include?(DungeonOfDoom::CHAR_IDOL)}.nil?
-        "IDOL NEEDED"
+        'IDOL NEEDED'
       else
-        ""
+        ''
       end
       if message.empty?
         save_level
         #get file name
-        @ui.place_text("MAP NAME:".ljust(18),2,5,DungeonOfDoom::C_WHITE_ON_RED)
+        @ui.place_text('MAP NAME:'.ljust(18),2,5,DungeonOfDoom::C_WHITE_ON_RED)
         file_name = @ui.get_string(11,5)
         #create file
-        File.open(file_name, "w") do |file|
+        File.open(file_name, 'w') do |file|
           @levels.each {|level| file.puts level}
         end
         true
@@ -205,7 +205,7 @@ module DungeonOfDoom
     # Update the current level counter and display the new level number
     def update_level
       @current_level += 1
-      @ui.place_text("THIS IS LEVEL: #@current_level".ljust(18) ,2,3,DungeonOfDoom::C_BLACK_ON_YELLOW)
+      @ui.place_text("THIS IS LEVEL: #{@current_level}".ljust(18) ,2,3,DungeonOfDoom::C_BLACK_ON_YELLOW)
     end
   end
 end

@@ -86,7 +86,7 @@ module DungeonOfDoom
       echo
       curs_set(1)
       key = nil
-      input_str = ""
+      input_str = ''
       @win.setpos(y,x)
       while key != "\n".ord  #converts CR to 10, the Ascii number for line feed, new line
         key = @win.getch

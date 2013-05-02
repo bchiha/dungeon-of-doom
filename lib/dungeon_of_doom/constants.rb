@@ -1,8 +1,8 @@
 module DungeonOfDoom
-  VERSION = "0.0.1"
+  VERSION = '0.0.1'
 
   # Define character shapes
-  CHAR_FLOOR  = " "      #blank
+  CHAR_FLOOR  = ' '      #blank
   CHAR_WALL   = "\u2592" #▒
   CHAR_POTION = "\u23CF" #⏏
   CHAR_CHEST  = "\u2c21" #Ⱑ

@@ -96,7 +96,6 @@ module DungeonOfDoom
       #display the hero's starting spot
       clear_message_box
       #get input either an action or a movement.
-      key = nil
       while true
         update_screen
         key = @ui.instr
@@ -125,11 +124,13 @@ module DungeonOfDoom
           when 'S','s' #save?
             #not implemented yet
           when 'Q','q' #quit
-            if ask_question("DO YOU REALLY WANT","TO QUIT? (Y/N)") == 'Y'
+            if ask_question('DO YOU REALLY WANT', 'TO QUIT? (Y/N)') == 'Y'
               break
             else
               clear_message_box
             end
+          else
+            #do nothing
         end
         #automated game elements
 
@@ -267,7 +268,7 @@ module DungeonOfDoom
       distance_x = @mon_x - @cur_x
       distance_y = @mon_y - @cur_y
       clear_message_box
-      if (distance_x.abs <= 1 && distance_y.abs <= 1)
+      if distance_x.abs <= 1 && distance_y.abs <= 1
         #does hero hit the monster?
         skill = @stats[:luck]+@stats[:agility]
         if skill >= Random.rand(skill + (@mon_attack * 2))
@@ -336,10 +337,10 @@ module DungeonOfDoom
           #see if hit weapon
           if Random.rand(7) == @mon_attack  #1 in 7 chance of loosing item
             item_found = false
-            while not item_found
+            until item_found
               #get a random item, keep trying until found on hero
-              object = ['2 HAND SWORD','BROADSWORD','SHORTSWORD','AXE','MACE','FLAIL','DAGGER','GAUNTLET',
-                        'HEAVY ARMOUR','CHAIN ARMOUR'].rotate(Random.rand(10)+1).first
+              object = ['2 HAND SWORD', 'BROADSWORD', 'SHORTSWORD', 'AXE', 'MACE', 'FLAIL', 'DAGGER', 'GAUNTLET',
+                        'HEAVY ARMOUR', 'CHAIN ARMOUR'].rotate(Random.rand(10)+1).first
               item = @objects.find { |obj| obj[:name]==object }
               if item
                 if object == 'HEAVY ARMOUR' || object == 'CHAIN ARMOUR'
@@ -347,7 +348,7 @@ module DungeonOfDoom
                 else
                   @attack -= item[:power]
                 end
-                @ui.place_text("#{object}!!".ljust(20),1,3)
+                @ui.place_text("#{object}!!".ljust(20), 1, 3)
                 @objects.delete(item)
                 item_found = true
               end
@@ -379,10 +380,10 @@ module DungeonOfDoom
       spell_number = nil
       book = @objects.find { |object| object[:name]=='NECRONOMICON' }
       scroll = @objects.find { |object| object[:name]=='SCROLLS' }
-      while !(1..6).include?(spell_number)
+      until (1..6).include?(spell_number)
         spell_number = ask_question(book.nil? ? '' : 'FROM NECRONOMICON',
-          scroll.nil? ? '' : 'FROM THE SCROLLS',
-          'CONSULT THE LORE','USE SPELL NUMBER?').to_i
+                                    scroll.nil? ? '' : 'FROM THE SCROLLS',
+                                    'CONSULT THE LORE', 'USE SPELL NUMBER?').to_i
         #reset if spell choosen but don't know it
         spell_number = 0 if ((1..3).include?(spell_number) && book.nil?) || ((4..6).include?(spell_number) && scroll.nil?)
       end
@@ -396,8 +397,8 @@ module DungeonOfDoom
         when 1 #superzap
           if @monster_detected
             kill_monster
-            @ui.place_text("ZAPPP! THE MONSTER".ljust(20),1,3)
-            @ui.place_text("TURNS INTO DUST!".ljust(20),1,4)
+            @ui.place_text('ZAPPP! THE MONSTER'.ljust(20),1,3)
+            @ui.place_text('TURNS INTO DUST!'.ljust(20),1,4)
           else
             @ui.place_text(MSG_NOTHING.ljust(20),1,2)
           end
@@ -423,14 +424,14 @@ module DungeonOfDoom
           @stats[:strength] += @stats[:aura]
           @stats[:vitality] += @stats[:aura]
           @stats[:aura] -= 1  #reduce aura
-          @ui.place_text("POWERSURGE APPLIED".ljust(20),1,2)
+          @ui.place_text('POWERSURGE APPLIED'.ljust(20),1,2)
         when 5 #metamorphosis
           #change what ever is facing the hero.
-          @ui.place_text("METAMORPHOSISING!".ljust(20),1,2)
+          @ui.place_text('METAMORPHOSISING!'.ljust(20),1,2)
           next_x = @cur_x + DIRECTION[@hero_direction][0]
           next_y = @cur_y + DIRECTION[@hero_direction][1]
           if next_x >= 0 && next_x <= 14 && next_y >= 0 && next_y <= 14
-            (1..30).each do |i|
+            (1..30).each do
               object = [CHAR_WALL,CHAR_POTION,CHAR_CHEST,CHAR_TRAP,CHAR_SAFE,CHAR_MONST].sample
               object = object[Random.rand(3)] if object == CHAR_MONST
               @room[next_x][next_y] = object
@@ -440,13 +441,13 @@ module DungeonOfDoom
             end
             @monster_detected = false #remove if monster change. but will re set if needed later
           else
-            @ui.place_text("FACING INTO WALL?".ljust(20),1,2)
+            @ui.place_text('FACING INTO WALL?'.ljust(20),1,2)
           end
         when 6 #healing
           @stats[:strength] = @orig_stats[:strength] if @stats[:strength] < @orig_stats[:strength]
           @stats[:vitality] = @orig_stats[:vitality] if @stats[:vitality] < @orig_stats[:vitality]
           @stats[:aura] -= 1  #reduce aura
-          @ui.place_text("FULLY HEALED".ljust(20),1,2)
+          @ui.place_text('FULLY HEALED'.ljust(20),1,2)
         else
           @ui.place_text('!UNKNOWN SPELL'.ljust(20),1,2)
         end
@@ -458,7 +459,7 @@ module DungeonOfDoom
     #Player has picked up the Idol.  Show score and do a dance!
     def win_game
       clear_message_box
-      @ui.place_text("THY QUEST IS OVER!".center(20),1,2)
+      @ui.place_text('THY QUEST IS OVER!'.center(20),1,2)
       (0..36).each do |i|
         hero_direction = POS_TURN.rotate!(i <=> 16)[0]
         @ui.place_text(DungeonOfDoom::CHAR_PLAYER[hero_direction], @cur_x+2, @cur_y+6, DungeonOfDoom::C_WHITE_ON_RED)
@@ -530,10 +531,7 @@ module DungeonOfDoom
           file_name=nil
         else
           hero_data = YAML.load(File.open(file_name))
-          if !hero_data.is_a? Hash   #file must be in a valid yaml format
-            @ui.place_text('!FILE BAD FORMAT'.ljust(20),1,4)
-            file_name=nil
-          else  #all okay!
+          if hero_data.is_a? Hash   #file must be in a valid yaml format
             #load stats
             hero_data[:stats].each do |stat|
               @stats[stat[0].downcase.to_sym] = stat[1]
@@ -577,6 +575,9 @@ module DungeonOfDoom
               object = @objects.find { |object| object[:name]==item }
               @defence += object[:power] if object
             end
+          else  #all okay!
+            @ui.place_text('!FILE BAD FORMAT'.ljust(20),1,4)
+            file_name=nil
           end
         end
       end
@@ -600,8 +601,8 @@ module DungeonOfDoom
           @ui.place_text(' '*19,2,3)
           @dungeon_file = @ui.get_string(2,3)
           #check to see if file exists
-          if !File.exists?(@dungeon_file)  #file must exist
-            @ui.place_text('!FILE NOT FOUND'.ljust(20),1,4)
+          unless File.exists?(@dungeon_file) #file must exist
+            @ui.place_text('!FILE NOT FOUND'.ljust(20), 1, 4)
             @dungeon_file=nil
           end
         end

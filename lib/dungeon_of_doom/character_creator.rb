@@ -39,13 +39,13 @@ module DungeonOfDoom
       @ui.draw_box(20,17,1,6,
                    DungeonOfDoom::C_BLACK_ON_WHITE,
                    DungeonOfDoom::C_BLACK_ON_YELLOW)
-      @ui.place_text(" "*20,1,1,DungeonOfDoom::C_YELLOW_ON_BLACK) #20 spaces
+      @ui.place_text(' '*20,1,1,DungeonOfDoom::C_YELLOW_ON_BLACK) #20 spaces
 
       #initialise character stats.  A hash of stat items
       @stats = set_up_stats
       @stat_points = BASE_POINTS+Random.rand(POINTS_MARGIN)+1
       @character_type = CHAR_F_WAND
-      @character_name = ""
+      @character_name = ''
 
       #initialise objects
       @objects = set_up_objects
@@ -60,7 +60,6 @@ module DungeonOfDoom
       #interate through 4 pages 0 to 3 (0 = Stats, 1-3 = Objects)
       (0..3).each do |page_no|
         #collect data for page and display the titles
-        page_display = nil
         @ui.set_colour(DungeonOfDoom::C_BLACK_ON_YELLOW)
         case page_no
         when 0
@@ -167,7 +166,7 @@ module DungeonOfDoom
       if object[:flags] & @character_type == 0  #not for character type
         message = "NOT FOR #{CHARACTER[CHARACTER_F.find_index(@character_type)]}"
       elsif object[:count] != nil && object[:name] != 'HEALING SALVE' && object[:name] != 'POTION' #already have it
-        message = "YOU HAVE IT SIRE"
+        message = 'YOU HAVE IT SIRE'
       else #buy or bid for it
         if action == 'B'
           #default offer and price
@@ -176,16 +175,16 @@ module DungeonOfDoom
         else
           asking_price = object[:cost]-(Random.rand(BARGAIN_REDUCTION)+1)
           #ask for offer
-          @ui.place_text("YOUR OFFER? ".ljust(16),3,3,DungeonOfDoom::C_BLACK_ON_YELLOW)
+          @ui.place_text('YOUR OFFER? '.ljust(16),3,3,DungeonOfDoom::C_BLACK_ON_YELLOW)
           offer = @ui.get_string(15,3).to_i
         end
         if @gold < offer #not enought gold
           message = "YOU CAN'T AFFORD"
         elsif offer < asking_price #cheapskate
-          message = "OFFER REJECTED"
+          message = 'OFFER REJECTED'
         else #buy it
           object[:count] = object[:count].nil? ? 1 : object[:count] += 1
-          message = "TIS YOURS"
+          message = 'TIS YOURS'
           @gold -= offer
           #update gold count
           @ui.place_text(@gold.to_s.rjust(3),16,4,DungeonOfDoom::C_BLACK_ON_YELLOW)
@@ -198,8 +197,8 @@ module DungeonOfDoom
     # must be no more then 6 characters
     def name_character
       while @character_name.empty? || @character_name.length > 6
-        @ui.place_text("NAME THY CHARACTER".ljust(18),2,3,DungeonOfDoom::C_BLACK_ON_YELLOW)
-        @ui.place_text("?".ljust(18),2,4,DungeonOfDoom::C_BLACK_ON_YELLOW)
+        @ui.place_text('NAME THY CHARACTER'.ljust(18),2,3,DungeonOfDoom::C_BLACK_ON_YELLOW)
+        @ui.place_text('?'.ljust(18),2,4,DungeonOfDoom::C_BLACK_ON_YELLOW)
         @character_name = @ui.get_string(4,4)
       end
     end
@@ -210,8 +209,8 @@ module DungeonOfDoom
     # This will make the data more visable during the game.
     def save_character
       #get file name
-      @ui.place_text("CHARACTER FILE".ljust(18),2,3,DungeonOfDoom::C_BLACK_ON_YELLOW)
-      @ui.place_text("NAME?".ljust(18),2,4,DungeonOfDoom::C_BLACK_ON_YELLOW)
+      @ui.place_text('CHARACTER FILE'.ljust(18),2,3,DungeonOfDoom::C_BLACK_ON_YELLOW)
+      @ui.place_text('NAME?'.ljust(18),2,4,DungeonOfDoom::C_BLACK_ON_YELLOW)
       file_name = @ui.get_string(8,4) + '.yaml'
       #create file
       character_data = {}
@@ -226,7 +225,7 @@ module DungeonOfDoom
       character_data[:objects] = objects.inject([]) {|list,item| item[:count].nil? ? list : list << item}
       character_data[:gold] = @gold
       character_data[:name] = [@character_name,'THE',CHARACTER[CHARACTER_F.find_index(@character_type)]].join(' ')
-      File.open(file_name, "w") {|file| YAML.dump(character_data, file)}
+      File.open(file_name, 'w') {|file| YAML.dump(character_data, file)}
     end
 
     # Display the text and value of each item on the screen, also, display the initial heading information
@@ -269,13 +268,13 @@ module DungeonOfDoom
     # Display the help messages
     def display_help
       #set up the help message
-      help_message = ["PRESS ANY KEY","USE J K TO MOVE","SPACE - NEXT PAGE","H L ADD/REM POINTS",
-                      "B TO PURCHASE","O TO MAKE AN OFFER","? FOR HELP"]
+      help_message = ['PRESS ANY KEY','USE J K TO MOVE','SPACE - NEXT PAGE','H L ADD/REM POINTS',
+                      'B TO PURCHASE','O TO MAKE AN OFFER','? FOR HELP']
       help_message.each do |msg|
         @ui.place_text(msg.ljust(18),2,5,DungeonOfDoom::C_RED_ON_WHITE)
         @ui.input
       end
-      @ui.place_text(" "*18,2,5,DungeonOfDoom::C_RED_ON_WHITE) #18 spaces
+      @ui.place_text(' '*18,2,5,DungeonOfDoom::C_RED_ON_WHITE) #18 spaces
     end
 
     # Initialise the character statistics array.  These stats all play a part in
@@ -284,7 +283,7 @@ module DungeonOfDoom
     def set_up_stats
       stats_array = []
       random = Random.new
-      ['STRENGTH', 'VITALITY', 'AGILITY', 'INTELLIGENCE', 'LUCK', 'AURA', 'MORALITY'].each do |stat|
+      %w(STRENGTH VITALITY AGILITY INTELLIGENCE LUCK AURA MORALITY).each do |stat|
         stats_array << [stat,random.rand(BASE_CHARACTER_STAT-STAT_MARGIN..BASE_CHARACTER_STAT+STAT_MARGIN)]
       end
       stats_array << ['EXPERIENCE',1]
