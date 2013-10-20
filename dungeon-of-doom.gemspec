@@ -1,5 +1,5 @@
 $:.push File.expand_path('../lib', __FILE__)
-require 'dungeon_of_doom/version'
+require 'dungeon_of_doom/constants'
 
 Gem::Specification.new do |s|
   s.name        = 'dungeon-of-doom'
