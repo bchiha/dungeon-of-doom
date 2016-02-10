@@ -3,10 +3,10 @@ module DungeonOfDoom
 
   # Define character shapes
   CHAR_FLOOR  = ' '      #blank
-  CHAR_WALL   = "\u2592" #▒
-  CHAR_POTION = "\u23CF" #⏏
-  CHAR_CHEST  = "\u2c21" #Ⱑ
-  CHAR_IDOL   = "\ue55f" #
+  CHAR_WALL   = "\u2588" #█
+  CHAR_POTION = "\u265C" #♜
+  CHAR_CHEST  = "\u2388" #⎈
+  CHAR_IDOL   = "\u2655" #♕
   CHAR_IN     = "\u2617" #☗
   CHAR_OUT    = "\u2616" #☖
   CHAR_TRAP   = "\u2622" #☢
