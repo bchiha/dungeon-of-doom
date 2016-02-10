@@ -1,0 +1,57 @@
+---
+:stats:
+- - STRENGTH
+  - 9
+- - VITALITY
+  - 8
+- - AGILITY
+  - 5
+- - INTELLIGENCE
+  - 7
+- - LUCK
+  - 5
+- - AURA
+  - 5
+- - MORALITY
+  - 5
+- - EXPERIENCE
+  - 1
+:objects:
+- :name: 2 HAND SWORD
+  :power: 5
+  :count: 1
+- :name: BROADSWORD
+  :power: 4
+  :count: 1
+- :name: AXE
+  :power: 3
+  :count: 1
+- :name: FLAIL
+  :power: 2
+  :count: 1
+- :name: HEAVY ARMOUR
+  :power: 5
+  :count: 1
+- :name: CHAIN ARMOUR
+  :power: 4
+  :count: 1
+- :name: LEATHER SKINS
+  :power: 3
+  :count: 1
+- :name: GOLD HELMET
+  :power: 2
+  :count: 1
+- :name: SHIELD
+  :power: 3
+  :count: 1
+- :name: TORCH
+  :power: 10
+  :count: 1
+- :name: HEALING SALVE
+  :power: 1
+  :count: 2
+- :name: POTION
+  :power: 1
+  :count: 2
+:gold: 17
+:name: Conan THE BARBARIAN

@@ -1,0 +1,45 @@
+---
+:stats:
+- - STRENGTH
+  - 5
+- - VITALITY
+  - 3
+- - AGILITY
+  - 4
+- - INTELLIGENCE
+  - 11
+- - LUCK
+  - 4
+- - AURA
+  - 9
+- - MORALITY
+  - 6
+- - EXPERIENCE
+  - 1
+:objects:
+- :name: DAGGER
+  :power: 1
+  :count: 1
+- :name: HEAVY ROBE
+  :power: 1
+  :count: 1
+- :name: TORCH
+  :power: 10
+  :count: 1
+- :name: NECRONOMICON
+  :power: 4
+  :count: 1
+- :name: SCROLLS
+  :power: 3
+  :count: 1
+- :name: SASH
+  :power: 3
+  :count: 1
+- :name: HEALING SALVE
+  :power: 1
+  :count: 2
+- :name: POTION
+  :power: 1
+  :count: 2
+:gold: 61
+:name: Merlin THE MAGE

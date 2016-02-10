@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+
+begin
+  require '../lib/dungeon_of_doom'
+rescue LoadError
+  require 'rubygems'
+  require '../lib/dungeon_of_doom'
+end
+
+game=DungeonOfDoom::CharacterCreator.new
+game.run
